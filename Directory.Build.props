@@ -1,0 +1,49 @@
+<Project>
+    <PropertyGroup>
+        <PackageTags>Cbor;Serialization;Deserialization;Binary;Models;Spotflow</PackageTags>
+        <PackageIcon>PackageIcon.png</PackageIcon>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+        <EnablePackageValidation>true</EnablePackageValidation>
+        <DebugType>embedded</DebugType>
+        <DebugSymbols>true</DebugSymbols>
+        <EmbedAllSources>true</EmbedAllSources>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <PackageProjectUrl>https://github.com/spotflow-io/cbor-dotnet</PackageProjectUrl>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="$(MSBuildThisFileDirectory)/PackageIcon.png" Pack="true" Visible="false" PackagePath="" />
+    </ItemGroup>
+
+    <!-- .NET & C# -->
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <LangVersion>13</LangVersion>
+        <Nullable>enable</Nullable>
+        <Features>strict</Features>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <IsPublishable>false</IsPublishable>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <!-- Release configuration -->
+
+    <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    </PropertyGroup>
+
+    <!-- CI -->
+
+    <PropertyGroup Condition="'$(CI)' == 'true'">
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(CI)' == 'true'">
+        <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" />
+    </ItemGroup>
+
+</Project>

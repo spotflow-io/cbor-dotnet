@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <IsPackable>true</IsPackable>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="System.Formats.Cbor" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="../../README.nuget.md" Pack="true" PackagePath="README.md" />
+    </ItemGroup>
+
+</Project>
