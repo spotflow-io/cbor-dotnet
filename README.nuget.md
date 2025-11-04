@@ -1,5 +1,5 @@
-# Azure In-Memory SDKs for Testing
+# Spotflow.Cbor
 
-Drop-in fakes of Azure .NET SDKs to make your test blazing-fast and reliable.
+TODO
 
-[See the Project Repository](https://github.com/spotflow-io/in-memory-azure-test-sdk) for more information.
+[See the Project Repository](https://github.com/spotflow-io/cbor-dotnet) for more information.
