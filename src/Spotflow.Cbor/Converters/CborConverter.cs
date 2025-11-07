@@ -6,20 +6,20 @@ public abstract class CborConverter
 {
     public abstract bool CanConvert(Type typeToConvert);
 
-    protected static CborDataSerializationException UnexpectedDataType(IReadOnlyList<CborReaderState> expected, CborReaderState actual)
+    public static CborSerializerException UnexpectedDataType(ReadOnlySpan<CborReaderState> expected, CborReaderState actual)
     {
-        var expectedFormatted = expected.Count switch
+        var expectedFormatted = expected.Length switch
         {
             0 => string.Empty,
             1 => $"'{expected[0]}'",
             2 => $"'{expected[0]}' or '{expected[1]}'",
-            _ => $"{string.Join(", ", expected.Take(expected.Count - 1).Select(e => $"'{e}'"))} or '{expected[^1]}'"
+            _ => $"{string.Join(", ", expected[0..(expected.Length - 1)].ToArray().Select(e => $"'{e}'"))} or '{expected[^1]}'"
         };
 
         return new($"Unexpected CBOR data type. Expected {expectedFormatted}, got '{actual}'.");
     }
 
-    protected static CborDataSerializationException UnexpectedDataType(CborReaderState expected, CborReaderState actual)
+    public static CborSerializerException UnexpectedDataType(CborReaderState expected, CborReaderState actual)
     {
         return new($"Unexpected CBOR data type. Expected '{expected}', got '{actual}'.");
     }

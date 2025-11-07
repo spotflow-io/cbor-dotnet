@@ -12,35 +12,37 @@ public class ValueTypeNullabilityTests
     [TestMethod]
     public void Required_Non_Nullable_Type_If_Value_Is_Missing_Should_Throw()
     {
-        var rawWriter = new CborWriter();
+        var writer = new CborWriter();
 
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteEndMap();
+        writer.WriteStartMap(null);
+        writer.WriteEndMap();
 
-        var cbor = rawWriter.Encode();
+        var cbor = writer.Encode();
 
         var action = () => CborSerializer.Deserialize<TestModelWithRequiredNonNullableProperty>(cbor);
 
         action.Should()
-            .Throw<CborDataSerializationException>()
-            .WithMessage("Missing required property '*TestModelWithRequiredNonNullableProperty.Property'.");
+            .Throw<CborSerializerException>()
+            .WithMessage("Required properties are missing: 'Property'.\n\n" +
+                "At: byte 1, depth 1.");
     }
 
     [TestMethod]
     public void Required_Nullable_Type_If_Value_Is_Missing_Should_Throw()
     {
-        var rawWriter = new CborWriter();
+        var writer = new CborWriter();
 
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteEndMap();
+        writer.WriteStartMap(null);
+        writer.WriteEndMap();
 
-        var cbor = rawWriter.Encode();
+        var cbor = writer.Encode();
 
         var action = () => CborSerializer.Deserialize<TestModelWithRequiredNullableProperty>(cbor);
 
         action.Should()
-            .Throw<CborDataSerializationException>()
-            .WithMessage("Missing required property '*TestModelWithRequiredNullableProperty.Property'.");
+            .Throw<CborSerializerException>()
+            .WithMessage("Required properties are missing: 'Property'.\n\n" +
+                "At: byte 1, depth 1.");
     }
 
     // Required + value is null
@@ -48,33 +50,36 @@ public class ValueTypeNullabilityTests
     [TestMethod]
     public void Required_Non_Nullable_Type_If_Value_Is_Null_Should_Throw()
     {
-        var rawWriter = new CborWriter();
+        var writer = new CborWriter();
 
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteTextString("Property");
-        rawWriter.WriteNull();
-        rawWriter.WriteEndMap();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("Property");
+        writer.WriteNull();
+        writer.WriteEndMap();
 
-        var cbor = rawWriter.Encode();
+        var cbor = writer.Encode();
 
         var action = () => CborSerializer.Deserialize<TestModelWithRequiredNonNullableProperty>(cbor);
 
         action.Should()
-            .Throw<CborDataSerializationException>()
-            .WithMessage("Property '*TestModelWithRequiredNonNullableProperty.Property' at depth 1: Null CBOR value cannot be converted to 'System.Int32'.");
+            .Throw<CborSerializerException>()
+            .WithMessage("Null CBOR value cannot be converted to 'System.Int32'.\n\n" +
+                "Path:\n" +
+                "#0: Property (*_TestModelWithRequiredNonNullableProperty)\n\n" +
+                "At: byte 10, depth 1.");
     }
 
     [TestMethod]
     public void Required_Nullable_Type_If_Value_Is_Null_Should_Yield_Null()
     {
-        var rawWriter = new CborWriter();
+        var writer = new CborWriter();
 
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteTextString("Property");
-        rawWriter.WriteNull();
-        rawWriter.WriteEndMap();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("Property");
+        writer.WriteNull();
+        writer.WriteEndMap();
 
-        var cbor = rawWriter.Encode();
+        var cbor = writer.Encode();
 
         var value = CborSerializer.Deserialize<TestModelWithRequiredNullableProperty>(cbor);
         value.Should().NotBeNull();
@@ -86,14 +91,14 @@ public class ValueTypeNullabilityTests
     [TestMethod]
     public void Required_Non_Nullable_Type_If_Value_Is_Present_Should_Yield_Value()
     {
-        var rawWriter = new CborWriter();
+        var writer = new CborWriter();
 
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteTextString("Property");
-        rawWriter.WriteInt32(42);
-        rawWriter.WriteEndMap();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("Property");
+        writer.WriteInt32(42);
+        writer.WriteEndMap();
 
-        var cbor = rawWriter.Encode();
+        var cbor = writer.Encode();
 
         var value = CborSerializer.Deserialize<TestModelWithRequiredNonNullableProperty>(cbor);
         value.Should().NotBeNull();
@@ -103,14 +108,14 @@ public class ValueTypeNullabilityTests
     [TestMethod]
     public void Required_Nullable_Type_If_Value_Is_Prsent_Should_Yield_Value()
     {
-        var rawWriter = new CborWriter();
+        var writer = new CborWriter();
 
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteTextString("Property");
-        rawWriter.WriteInt32(42);
-        rawWriter.WriteEndMap();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("Property");
+        writer.WriteInt32(42);
+        writer.WriteEndMap();
 
-        var cbor = rawWriter.Encode();
+        var cbor = writer.Encode();
 
         var value = CborSerializer.Deserialize<TestModelWithRequiredNullableProperty>(cbor);
         value.Should().NotBeNull();
@@ -123,12 +128,12 @@ public class ValueTypeNullabilityTests
     [TestMethod]
     public void Non_Nullable_Type_If_Value_Is_Missing_Should_Yield_Default_Value()
     {
-        var rawWriter = new CborWriter();
+        var writer = new CborWriter();
 
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteEndMap();
+        writer.WriteStartMap(null);
+        writer.WriteEndMap();
 
-        var cbor = rawWriter.Encode();
+        var cbor = writer.Encode();
 
         var value = CborSerializer.Deserialize<TestModelWithNonNullableProperty>(cbor);
 
@@ -139,12 +144,12 @@ public class ValueTypeNullabilityTests
     [TestMethod]
     public void Nullable_Type_When_Value_Is_Missing_Should_Yield_Null()
     {
-        var rawWriter = new CborWriter();
+        var writer = new CborWriter();
 
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteEndMap();
+        writer.WriteStartMap(null);
+        writer.WriteEndMap();
 
-        var cbor = rawWriter.Encode();
+        var cbor = writer.Encode();
 
         var value = CborSerializer.Deserialize<TestModelWithNullableProperty>(cbor);
         value.Should().NotBeNull();
@@ -156,33 +161,36 @@ public class ValueTypeNullabilityTests
     [TestMethod]
     public void Non_Nullable_Type_If_Value_Is_Null_Should_Throw()
     {
-        var rawWriter = new CborWriter();
+        var writer = new CborWriter();
 
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteTextString("Property");
-        rawWriter.WriteNull();
-        rawWriter.WriteEndMap();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("Property");
+        writer.WriteNull();
+        writer.WriteEndMap();
 
-        var cbor = rawWriter.Encode();
+        var cbor = writer.Encode();
 
         var action = () => CborSerializer.Deserialize<TestModelWithNonNullableProperty>(cbor);
 
         action.Should()
-            .Throw<CborDataSerializationException>()
-            .WithMessage("Property '*TestModelWithNonNullableProperty.Property' at depth 1: Null CBOR value cannot be converted to 'System.Int32'.");
+            .Throw<CborSerializerException>()
+            .WithMessage("Null CBOR value cannot be converted to 'System.Int32'.\n\n" +
+                "Path:\n" +
+                "#0: Property (*_TestModelWithNonNullableProperty)\n\n" +
+                "At: byte 10, depth 1.");
     }
 
     [TestMethod]
     public void Nullable_Type_If_Value_Is_Null_Should_Yield_Null()
     {
-        var rawWriter = new CborWriter();
+        var writer = new CborWriter();
 
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteTextString("Property");
-        rawWriter.WriteNull();
-        rawWriter.WriteEndMap();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("Property");
+        writer.WriteNull();
+        writer.WriteEndMap();
 
-        var cbor = rawWriter.Encode();
+        var cbor = writer.Encode();
 
         var value = CborSerializer.Deserialize<TestModelWithNullableProperty>(cbor);
         value.Should().NotBeNull();
@@ -194,14 +202,14 @@ public class ValueTypeNullabilityTests
     [TestMethod]
     public void Non_Nullable_Type_If_Value_Is_Present_Should_Yield_Value()
     {
-        var rawWriter = new CborWriter();
+        var writer = new CborWriter();
 
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteTextString("Property");
-        rawWriter.WriteInt32(42);
-        rawWriter.WriteEndMap();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("Property");
+        writer.WriteInt32(42);
+        writer.WriteEndMap();
 
-        var cbor = rawWriter.Encode();
+        var cbor = writer.Encode();
 
         var value = CborSerializer.Deserialize<TestModelWithNonNullableProperty>(cbor);
         value.Should().NotBeNull();
@@ -211,14 +219,14 @@ public class ValueTypeNullabilityTests
     [TestMethod]
     public void Nullable_Type_If_Value_Is_Present_Should_Yield_Value()
     {
-        var rawWriter = new CborWriter();
+        var writer = new CborWriter();
 
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteTextString("Property");
-        rawWriter.WriteInt32(42);
-        rawWriter.WriteEndMap();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("Property");
+        writer.WriteInt32(42);
+        writer.WriteEndMap();
 
-        var cbor = rawWriter.Encode();
+        var cbor = writer.Encode();
 
         var value = CborSerializer.Deserialize<TestModelWithNullableProperty>(cbor);
         value.Should().NotBeNull();

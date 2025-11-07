@@ -28,6 +28,8 @@ public static class CborSerializer
     {
         ArgumentNullException.ThrowIfNull(reader);
 
+        var initBytesRemaining = reader.BytesRemaining;
+
         options ??= CborSerializerOptions.Default;
 
         options.MakeReadOnly();
@@ -36,8 +38,16 @@ public static class CborSerializer
 
         var isNullableOfTOrReferenceType = CborTypeInfo.IsNullableOfTOrReferenceType<T>();
 
-        return ResolveValue(isNullable: isNullableOfTOrReferenceType, converter, reader, options);
+        try
+        {
+            return ResolveValue(isNullable: isNullableOfTOrReferenceType, converter, reader, options);
+        }
+        catch (Exception ex) when (CborSerializerException.IsRecognizedException(ex))
+        {
+            var currentByte = initBytesRemaining - reader.BytesRemaining;
 
+            throw CborSerializerException.WrapWithPositionInfo(ex, currentByte, reader.CurrentDepth);
+        }
     }
 
     public static byte[] Serialize<T>(T value, CborSerializerOptions? options = null)
@@ -68,7 +78,14 @@ public static class CborSerializer
 
         var converter = CborTypeInfo.ResolveWriteConverterForType<T>(options);
 
-        converter.Write(writer, value, options);
+        try
+        {
+            converter.Write(writer, value, options);
+        }
+        catch (Exception ex) when (CborSerializerException.IsRecognizedException(ex))
+        {
+            throw CborSerializerException.WrapWithPositionInfo(ex, writer.BytesWritten, writer.CurrentDepth);
+        }
 
         return writer.Encode();
     }
@@ -111,7 +128,7 @@ public static class CborSerializer
             }
             else
             {
-                throw new CborDataSerializationException($"Null CBOR value cannot be converted to '{typeof(T)}'.");
+                throw new CborSerializerException($"Null CBOR value cannot be converted to '{typeof(T)}'.");
             }
         }
         else
@@ -129,7 +146,7 @@ public static class CborSerializer
             return value;
         }
 
-        throw new CborDataSerializationException($"Null CBOR value cannot be assigned to '{typeof(T)}'.");
+        throw new CborSerializerException($"Null CBOR value cannot be assigned to '{typeof(T)}'.");
 
     }
 }

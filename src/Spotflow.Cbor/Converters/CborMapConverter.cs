@@ -11,6 +11,10 @@ internal class CborMapConverter<TDictionary, TKey, TValue>(bool valueIsNullable)
 
     public override TDictionary Read(CborReader reader, Type typeToConvert, CborSerializerOptions options)
     {
+        var initialDepth = reader.CurrentDepth;
+
+        options.AssertMaxDepth(initialDepth);
+
         AssertReaderState(reader, CborReaderState.StartMap);
 
         reader.ReadStartMap();
@@ -23,27 +27,30 @@ internal class CborMapConverter<TDictionary, TKey, TValue>(bool valueIsNullable)
 
             var keyConverter = CborTypeInfo.ResolveReadConverterForType<TKey>(reader, options);
 
-            if (reader.PeekState() != CborReaderState.Null || keyConverter.HandleNull)
-            {
-                key = keyConverter.Read(reader, typeof(TKey), options);
-
-                if (key is null)
-                {
-                    throw new CborDataSerializationException("Dictionary key cannot be null.");
-                }
-            }
-            else
+            if (reader.PeekState() is CborReaderState.Null && !keyConverter.HandleNull)
             {
                 throw new InvalidOperationException("Dictionary key cannot be null.");
             }
 
-            var valueConverter = CborTypeInfo.ResolveReadConverterForType<TValue>(reader, options);
+            key = keyConverter.Read(reader, typeof(TKey), options);
 
-            var value = CborSerializer.ResolveValue(valueIsNullable, valueConverter, reader, options);
+            if (key is null)
+            {
+                throw new CborSerializerException("Dictionary key cannot be null.");
+            }
 
-            dictionary.Add(key, value);
+            try
+            {
+                var valueConverter = CborTypeInfo.ResolveReadConverterForType<TValue>(reader, options);
 
+                var value = CborSerializer.ResolveValue(valueIsNullable, valueConverter, reader, options);
 
+                dictionary.Add(key, value);
+            }
+            catch (Exception ex) when (CborSerializerException.IsRecognizedException(ex))
+            {
+                throw EnrichWithParentKey(ex, initialDepth, key);
+            }
         }
 
         AssertReaderState(reader, CborReaderState.EndMap);
@@ -55,6 +62,10 @@ internal class CborMapConverter<TDictionary, TKey, TValue>(bool valueIsNullable)
 
     public override void Write(CborWriter writer, TDictionary? value, CborSerializerOptions options)
     {
+        var initialDepth = writer.CurrentDepth;
+
+        options.AssertMaxDepth(initialDepth);
+
         if (value is null)
         {
             throw CannotSerializeNullValue();
@@ -74,10 +85,33 @@ internal class CborMapConverter<TDictionary, TKey, TValue>(bool valueIsNullable)
 
         foreach (var kvp in value)
         {
-            keyConverter.Write(writer, kvp.Key, options);
-            valueConverter.Write(writer, kvp.Value, options);
+            try
+            {
+                keyConverter.Write(writer, kvp.Key, options);
+                valueConverter.Write(writer, kvp.Value, options);
+            }
+            catch (Exception ex) when (CborSerializerException.IsRecognizedException(ex))
+            {
+                throw EnrichWithParentKey(ex, initialDepth, kvp.Key);
+            }
         }
 
         writer.WriteEndMap();
+    }
+
+    private static Exception EnrichWithParentKey(Exception ex, int objectDepth, TKey key)
+    {
+        string name;
+
+        if (key is string stringKey)
+        {
+            name = $"#{objectDepth}: [\"{stringKey}\"]";
+        }
+        else
+        {
+            name = $"#{objectDepth}: [{key}]";
+        }
+
+        return CborSerializerException.WrapWithParentScope(ex, name);
     }
 }

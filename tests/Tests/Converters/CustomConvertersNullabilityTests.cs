@@ -3,7 +3,7 @@ using System.Formats.Cbor;
 using Spotflow.Cbor;
 using Spotflow.Cbor.Converters;
 
-namespace Tests;
+namespace Tests.Converters;
 
 
 [TestClass]
@@ -14,12 +14,12 @@ public class CustomConvertersNullabilityTests
     [DataRow(false)]
     public void Converter_For_Value_Type_For_Nullable_Property_With_Missing_Value_Should_Not_Be_Applied(bool handleNull)
     {
-        var rawWriter = new CborWriter();
+        var writer = new CborWriter();
 
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteEndMap();
+        writer.WriteStartMap(null);
+        writer.WriteEndMap();
 
-        var cbor = rawWriter.Encode();
+        var cbor = writer.Encode();
 
         var valueFromConverter = new TestValueType { Value = 42 };
 
@@ -39,14 +39,14 @@ public class CustomConvertersNullabilityTests
     [DataRow(false)]
     public void Converter_For_Value_Type_For_Nullable_Property_With_Null_Value_Should_Not_Be_Applied(bool handleNull)
     {
-        var rawWriter = new CborWriter();
+        var writer = new CborWriter();
 
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteTextString("Property");
-        rawWriter.WriteNull();
-        rawWriter.WriteEndMap();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("Property");
+        writer.WriteNull();
+        writer.WriteEndMap();
 
-        var cbor = rawWriter.Encode();
+        var cbor = writer.Encode();
 
         var valueFromConverter = new TestValueType { Value = 42 };
 
@@ -67,12 +67,12 @@ public class CustomConvertersNullabilityTests
     public void Converter_For_Value_Type_For_Nullable_Property_With_Non_Null_Value_Should_Be_Applied(bool handleNull)
     {
 
-        var rawWriter = new CborWriter();
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteTextString("Property");
-        rawWriter.WriteInt32(43);
-        rawWriter.WriteEndMap();
-        var cbor = rawWriter.Encode();
+        var writer = new CborWriter();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("Property");
+        writer.WriteInt32(43);
+        writer.WriteEndMap();
+        var cbor = writer.Encode();
 
         var valueFromConverter = new TestValueType { Value = 42 };
 
@@ -89,14 +89,14 @@ public class CustomConvertersNullabilityTests
     [TestMethod]
     public void Converter_For_Value_Type_For_Property_With_Null_Value_With_Null_Handling_Should_Be_Applied()
     {
-        var rawWriter = new CborWriter();
+        var writer = new CborWriter();
 
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteTextString("Property");
-        rawWriter.WriteNull();
-        rawWriter.WriteEndMap();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("Property");
+        writer.WriteNull();
+        writer.WriteEndMap();
 
-        var cbor = rawWriter.Encode();
+        var cbor = writer.Encode();
 
 
         var valueFromConverter = new TestValueType { Value = 42 };
@@ -115,14 +115,14 @@ public class CustomConvertersNullabilityTests
     [TestMethod]
     public void Converter_For_Value_Type_For_Property_With_Null_Value_Without_Null_Handling_Should_Not_Be_Compatible()
     {
-        var rawWriter = new CborWriter();
+        var writer = new CborWriter();
 
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteTextString("Property");
-        rawWriter.WriteNull();
-        rawWriter.WriteEndMap();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("Property");
+        writer.WriteNull();
+        writer.WriteEndMap();
 
-        var cbor = rawWriter.Encode();
+        var cbor = writer.Encode();
 
         var valueFromConverter = new TestValueType { Value = 42 };
 
@@ -131,8 +131,12 @@ public class CustomConvertersNullabilityTests
 
         var act = () => CborSerializer.Deserialize<TestModelWithValueType>(cbor, options);
 
-        act.Should().Throw<CborDataSerializationException>()
-            .WithMessage("Property '*TestModelWithValueType.Property' at depth 1: Null CBOR value cannot be converted to '*TestValueType'.");
+        act.Should()
+            .Throw<CborSerializerException>()
+            .WithMessage("Null CBOR value cannot be converted to '*_TestValueType'.\n\n" +
+                "Path:\n" +
+                "#0: Property (*_TestModelWithValueType)\n\n" +
+                "At: byte 10, depth 1.");
 
     }
 
@@ -141,12 +145,12 @@ public class CustomConvertersNullabilityTests
     [DataRow(false)]
     public void Converter_For_Value_Type_For_Property_With_Non_Null_Value_Should_Be_Applied(bool handleNull)
     {
-        var rawWriter = new CborWriter();
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteTextString("Property");
-        rawWriter.WriteInt32(43);
-        rawWriter.WriteEndMap();
-        var cbor = rawWriter.Encode();
+        var writer = new CborWriter();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("Property");
+        writer.WriteInt32(43);
+        writer.WriteEndMap();
+        var cbor = writer.Encode();
 
         var valueFromConverter = new TestValueType { Value = 42 };
 
@@ -165,10 +169,10 @@ public class CustomConvertersNullabilityTests
     [DataRow(false)]
     public void Converter_For_Value_Type_For_Property_With_Missing_Value_Should_Not_Be_Applied(bool handleNull)
     {
-        var rawWriter = new CborWriter();
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteEndMap();
-        var cbor = rawWriter.Encode();
+        var writer = new CborWriter();
+        writer.WriteStartMap(null);
+        writer.WriteEndMap();
+        var cbor = writer.Encode();
 
         var valueFromConverter = new TestValueType { Value = 42 };
 
@@ -188,10 +192,10 @@ public class CustomConvertersNullabilityTests
     [DataRow(false)]
     public void Converter_For_Nullable_Value_Type_For_Nullable_Property_With_Missing_Value_Should_Not_Be_Applied(bool handleNull)
     {
-        var rawWriter = new CborWriter();
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteEndMap();
-        var cbor = rawWriter.Encode();
+        var writer = new CborWriter();
+        writer.WriteStartMap(null);
+        writer.WriteEndMap();
+        var cbor = writer.Encode();
 
         var valueFromConverter = new TestValueType { Value = 42 };
 
@@ -209,14 +213,14 @@ public class CustomConvertersNullabilityTests
     [TestMethod]
     public void Converter_For_Nullable_Value_Type_For_Nullable_Property_With_Null_Value_With_Null_Handling_Should_Be_Applied()
     {
-        var rawWriter = new CborWriter();
+        var writer = new CborWriter();
 
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteTextString("Property");
-        rawWriter.WriteNull();
-        rawWriter.WriteEndMap();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("Property");
+        writer.WriteNull();
+        writer.WriteEndMap();
 
-        var cbor = rawWriter.Encode();
+        var cbor = writer.Encode();
 
 
         var valueFromConverter = new TestValueType { Value = 42 };
@@ -235,14 +239,14 @@ public class CustomConvertersNullabilityTests
     [TestMethod]
     public void Converter_For_Nullable_Value_Type_For_Nullable_Property_With_Null_Value_Without_Null_Handling_Should_Not_Be_Applied()
     {
-        var rawWriter = new CborWriter();
+        var writer = new CborWriter();
 
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteTextString("Property");
-        rawWriter.WriteNull();
-        rawWriter.WriteEndMap();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("Property");
+        writer.WriteNull();
+        writer.WriteEndMap();
 
-        var cbor = rawWriter.Encode();
+        var cbor = writer.Encode();
 
         var valueFromConverter = new TestValueType { Value = 42 };
 
@@ -262,12 +266,12 @@ public class CustomConvertersNullabilityTests
     [DataRow(false)]
     public void Converter_For_Nullable_Value_Type_For_Nullable_Property_With_Non_Null_Value_Should_Be_Applied(bool handleNull)
     {
-        var rawWriter = new CborWriter();
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteTextString("Property");
-        rawWriter.WriteInt32(43);
-        rawWriter.WriteEndMap();
-        var cbor = rawWriter.Encode();
+        var writer = new CborWriter();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("Property");
+        writer.WriteInt32(43);
+        writer.WriteEndMap();
+        var cbor = writer.Encode();
 
         var valueFromConverter = new TestValueType { Value = 42 };
 
@@ -286,39 +290,14 @@ public class CustomConvertersNullabilityTests
     [DataRow(false)]
     public void Converter_For_Nullable_Value_Type_For_Property_With_Null_Value_Should_Not_Be_Compatible(bool handleNull)
     {
-        var rawWriter = new CborWriter();
+        var writer = new CborWriter();
 
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteTextString("Property");
-        rawWriter.WriteNull();
-        rawWriter.WriteEndMap();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("Property");
+        writer.WriteNull();
+        writer.WriteEndMap();
 
-        var cbor = rawWriter.Encode();
-
-
-        var valueFromConverter = new TestValueType { Value = 42 };
-
-        var converter = new TestNullableValueTypeConverter(handleNull: handleNull, testValue: valueFromConverter);
-        var options = new CborSerializerOptions { Converters = { converter } };
-
-        var act = () => CborSerializer.Deserialize<TestModelWithValueType>(cbor, options);
-
-        act.Should().Throw<CborDataSerializationException>()
-            .WithMessage("Property '*TestModelWithValueType.Property' at depth 1: Null CBOR value cannot be converted to '*TestValueType'.");
-
-    }
-
-    [TestMethod]
-    [DataRow(true)]
-    [DataRow(false)]
-    public void Converter_For_Nullable_Value_Type_For_Property_With_Non_Null_Value_Should_Not_Be_Compatible(bool handleNull)
-    {
-        var rawWriter = new CborWriter();
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteTextString("Property");
-        rawWriter.WriteInt32(43);
-        rawWriter.WriteEndMap();
-        var cbor = rawWriter.Encode();
+        var cbor = writer.Encode();
 
         var valueFromConverter = new TestValueType { Value = 42 };
 
@@ -328,8 +307,39 @@ public class CustomConvertersNullabilityTests
         var act = () => CborSerializer.Deserialize<TestModelWithValueType>(cbor, options);
 
         act.Should()
-            .Throw<CborDataSerializationException>()
-            .WithMessage("Property '*TestModelWithValueType.Property' at depth 1: CBOR value 'UnsignedInteger' could not be converted to '*TestValueType'.");
+            .Throw<CborSerializerException>()
+            .WithMessage("Null CBOR value cannot be converted to '*_TestValueType'.\n\n" +
+                "Path:\n" +
+                "#0: Property (*_TestModelWithValueType)\n\n" +
+                "At: byte 10, depth 1.");
+
+    }
+
+    [TestMethod]
+    [DataRow(true)]
+    [DataRow(false)]
+    public void Converter_For_Nullable_Value_Type_For_Property_With_Non_Null_Value_Should_Not_Be_Compatible(bool handleNull)
+    {
+        var writer = new CborWriter();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("Property");
+        writer.WriteInt32(43);
+        writer.WriteEndMap();
+        var cbor = writer.Encode();
+
+        var valueFromConverter = new TestValueType { Value = 42 };
+
+        var converter = new TestNullableValueTypeConverter(handleNull: handleNull, testValue: valueFromConverter);
+        var options = new CborSerializerOptions { Converters = { converter } };
+
+        var act = () => CborSerializer.Deserialize<TestModelWithValueType>(cbor, options);
+
+        act.Should()
+            .Throw<CborSerializerException>()
+            .WithMessage("CBOR value 'UnsignedInteger' could not be converted to '*_TestValueType'.\n\n" +
+                "Path:\n" +
+                "#0: Property (*_TestModelWithValueType)\n\n" +
+                "At: byte 10, depth 1.");
 
     }
 
@@ -339,10 +349,10 @@ public class CustomConvertersNullabilityTests
     public void Converter_For_Nullable_Value_Type_For_Property_With_Missing_Value_Should_Not_Be_Applied(bool handleNull)
     {
 
-        var rawWriter = new CborWriter();
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteEndMap();
-        var cbor = rawWriter.Encode();
+        var writer = new CborWriter();
+        writer.WriteStartMap(null);
+        writer.WriteEndMap();
+        var cbor = writer.Encode();
 
         var valueFromConverter = new TestValueType { Value = 42 };
 
@@ -360,10 +370,10 @@ public class CustomConvertersNullabilityTests
     [DataRow(false)]
     public void Converter_For_Reference_Type_For_Nullable_Property_With_Missing_Value_Should_Not_Be_Applied(bool handleNull)
     {
-        var rawWriter = new CborWriter();
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteEndMap();
-        var cbor = rawWriter.Encode();
+        var writer = new CborWriter();
+        writer.WriteStartMap(null);
+        writer.WriteEndMap();
+        var cbor = writer.Encode();
 
         var valueFromConverter = new TestReferenceType { Value = 42 };
 
@@ -381,12 +391,12 @@ public class CustomConvertersNullabilityTests
     [TestMethod]
     public void Converter_For_Reference_Type_For_Nullable_Property_With_Null_Value_With_Null_Handling_Should_Be_Applied()
     {
-        var rawWriter = new CborWriter();
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteTextString("Property");
-        rawWriter.WriteNull();
-        rawWriter.WriteEndMap();
-        var cbor = rawWriter.Encode();
+        var writer = new CborWriter();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("Property");
+        writer.WriteNull();
+        writer.WriteEndMap();
+        var cbor = writer.Encode();
 
         var valueFromConverter = new TestReferenceType { Value = 42 };
 
@@ -404,12 +414,12 @@ public class CustomConvertersNullabilityTests
     [TestMethod]
     public void Converter_For_Reference_Type_For_Nullable_Property_With_Null_Value_Without_Null_Handling_Should_Not_Be_Applied()
     {
-        var rawWriter = new CborWriter();
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteTextString("Property");
-        rawWriter.WriteNull();
-        rawWriter.WriteEndMap();
-        var cbor = rawWriter.Encode();
+        var writer = new CborWriter();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("Property");
+        writer.WriteNull();
+        writer.WriteEndMap();
+        var cbor = writer.Encode();
 
         var valueFromConverter = new TestReferenceType { Value = 42 };
 
@@ -429,12 +439,12 @@ public class CustomConvertersNullabilityTests
     [DataRow(false)]
     public void Converter_For_Reference_Type_For_Nullable_Property_With_Non_Null_Value_Should_Be_Applied(bool handleNull)
     {
-        var rawWriter = new CborWriter();
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteTextString("Property");
-        rawWriter.WriteInt32(43);
-        rawWriter.WriteEndMap();
-        var cbor = rawWriter.Encode();
+        var writer = new CborWriter();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("Property");
+        writer.WriteInt32(43);
+        writer.WriteEndMap();
+        var cbor = writer.Encode();
 
         var valueFromConverter = new TestReferenceType { Value = 42 };
 
@@ -451,12 +461,12 @@ public class CustomConvertersNullabilityTests
     [TestMethod]
     public void Converter_For_Reference_Type_For_Property_With_Null_Value_With_Null_Handling_Should_Be_Applied()
     {
-        var rawWriter = new CborWriter();
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteTextString("Property");
-        rawWriter.WriteNull();
-        rawWriter.WriteEndMap();
-        var cbor = rawWriter.Encode();
+        var writer = new CborWriter();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("Property");
+        writer.WriteNull();
+        writer.WriteEndMap();
+        var cbor = writer.Encode();
 
         var valueFromConverter = new TestReferenceType { Value = 42 };
 
@@ -473,12 +483,12 @@ public class CustomConvertersNullabilityTests
     [TestMethod]
     public void Converter_For_Reference_Type_For_Property_With_Null_Value_Without_Null_Handling_Without_Nullable_Annotations_Should_Not_Be_Applied()
     {
-        var rawWriter = new CborWriter();
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteTextString("Property");
-        rawWriter.WriteNull();
-        rawWriter.WriteEndMap();
-        var cbor = rawWriter.Encode();
+        var writer = new CborWriter();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("Property");
+        writer.WriteNull();
+        writer.WriteEndMap();
+        var cbor = writer.Encode();
 
         var valueFromConverter = new TestReferenceType { Value = 42 };
 
@@ -495,12 +505,12 @@ public class CustomConvertersNullabilityTests
     [TestMethod]
     public void Converter_For_Reference_Type_For_Property_With_Null_Value_Without_Null_Handling_With_Nullable_Annotations_Should_Not_Be_Compatible()
     {
-        var rawWriter = new CborWriter();
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteTextString("Property");
-        rawWriter.WriteNull();
-        rawWriter.WriteEndMap();
-        var cbor = rawWriter.Encode();
+        var writer = new CborWriter();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("Property");
+        writer.WriteNull();
+        writer.WriteEndMap();
+        var cbor = writer.Encode();
 
         var valueFromConverter = new TestReferenceType { Value = 42 };
 
@@ -510,8 +520,11 @@ public class CustomConvertersNullabilityTests
         var act = () => CborSerializer.Deserialize<TestModelWithReferenceType>(cbor, options);
 
         act.Should()
-            .Throw<CborDataSerializationException>()
-            .WithMessage("Property '*TestModelWithReferenceType.Property' at depth 1: Null CBOR value cannot be converted to '*TestReferenceType'.");
+            .Throw<CborSerializerException>()
+            .WithMessage("Null CBOR value cannot be converted to '*_TestReferenceType'.\n\n" +
+                "Path:\n" +
+                "#0: Property (*_TestModelWithReferenceType)" +
+                "\n\nAt: byte 10, depth 1.");
     }
 
     [TestMethod]
@@ -519,12 +532,12 @@ public class CustomConvertersNullabilityTests
     [DataRow(false)]
     public void Converter_For_Reference_Type_For_Property_With_Non_Null_Value_Should_Be_Applied(bool handleNull)
     {
-        var rawWriter = new CborWriter();
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteTextString("Property");
-        rawWriter.WriteInt32(43);
-        rawWriter.WriteEndMap();
-        var cbor = rawWriter.Encode();
+        var writer = new CborWriter();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("Property");
+        writer.WriteInt32(43);
+        writer.WriteEndMap();
+        var cbor = writer.Encode();
 
         var valueFromConverter = new TestReferenceType { Value = 42 };
 
@@ -542,10 +555,10 @@ public class CustomConvertersNullabilityTests
     [DataRow(false)]
     public void Converter_For_Reference_Type_For_Property_With_Missing_Value_Should_Not_Be_Applied(bool handleNull)
     {
-        var rawWriter = new CborWriter();
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteEndMap();
-        var cbor = rawWriter.Encode();
+        var writer = new CborWriter();
+        writer.WriteStartMap(null);
+        writer.WriteEndMap();
+        var cbor = writer.Encode();
 
         var valueFromConverter = new TestReferenceType { Value = 42 };
 

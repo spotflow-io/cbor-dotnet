@@ -15,6 +15,8 @@ public class CborSerializerOptions
     private readonly ObjectPool<CborReader> _readersPool;
     private readonly ObjectPool<CborWriter> _writersPool;
 
+    public static int DefaultMaxDepth { get; } = 64;
+
     static CborSerializerOptions()
     {
         Default = new CborSerializerOptions();
@@ -114,15 +116,27 @@ public class CborSerializerOptions
         }
     }
 
-    private bool _laxBooleanParsing = false;
+    private CborBooleanHandling _booleanHandling = CborBooleanHandling.Strict;
 
-    public bool LaxBooleanParsing
+    public CborBooleanHandling BooleanHandling
     {
-        get => _laxBooleanParsing;
+        get => _booleanHandling;
         set
         {
             AssertNotReadOnly();
-            _laxBooleanParsing = value;
+            _booleanHandling = value;
+        }
+    }
+
+    private CborNumberHandling _numberHandling = CborNumberHandling.Strict;
+
+    public CborNumberHandling NumberHandling
+    {
+        get => _numberHandling;
+        set
+        {
+            AssertNotReadOnly();
+            _numberHandling = value;
         }
     }
 
@@ -135,6 +149,21 @@ public class CborSerializerOptions
         {
             AssertNotReadOnly();
             _propertyNameCaseInsensitive = value;
+        }
+    }
+
+    private int _maxDepth = 0;
+
+    public int MaxDepth
+    {
+        get => _maxDepth;
+        set
+        {
+            AssertNotReadOnly();
+
+            ArgumentOutOfRangeException.ThrowIfLessThan(value, 0);
+
+            _maxDepth = value;
         }
     }
 
@@ -183,6 +212,16 @@ public class CborSerializerOptions
         if (_isReadOnly)
         {
             throw new InvalidOperationException("Cannot modify options after it has been used for serialization or deserialization.");
+        }
+    }
+
+    internal void AssertMaxDepth(int currentDepth)
+    {
+        var maxDepthResolved = _maxDepth == 0 ? DefaultMaxDepth : _maxDepth;
+
+        if (currentDepth > maxDepthResolved)
+        {
+            throw new CborSerializerException($"Current depth ({currentDepth}) has exceeded maximum allowed depth {maxDepthResolved}.");
         }
     }
 

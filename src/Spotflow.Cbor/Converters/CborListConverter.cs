@@ -9,19 +9,33 @@ internal class CborListConverter<TList, TElement>(
 {
     public override TList Read(CborReader reader, Type typeToConvert, CborSerializerOptions options)
     {
+        var initialDepth = reader.CurrentDepth;
+        options.AssertMaxDepth(initialDepth);
+
         AssertReaderState(reader, CborReaderState.StartArray);
 
         var definitiveLength = reader.ReadStartArray();
 
         var listBuilder = listBuilderFactory(definitiveLength);
 
+        var elementIndex = 0;
+
         while (reader.PeekState() != CborReaderState.EndArray)
         {
-            var elementConverter = CborTypeInfo.ResolveReadConverterForType<TElement>(reader, options);
+            try
+            {
+                var elementConverter = CborTypeInfo.ResolveReadConverterForType<TElement>(reader, options);
 
-            var element = CborSerializer.ResolveValue(elementIsNullable, elementConverter, reader, options);
+                var element = CborSerializer.ResolveValue(elementIsNullable, elementConverter, reader, options);
 
-            listBuilder.Add(element);
+                listBuilder.Add(element);
+            }
+            catch (Exception ex) when (CborSerializerException.IsRecognizedException(ex))
+            {
+                throw EnrichWithParentIndex(ex, initialDepth, elementIndex);
+            }
+
+            elementIndex++;
         }
 
         AssertReaderState(reader, CborReaderState.EndArray);
@@ -33,6 +47,11 @@ internal class CborListConverter<TList, TElement>(
 
     public override void Write(CborWriter writer, TList? value, CborSerializerOptions options)
     {
+
+        var initialDepth = writer.CurrentDepth;
+
+        options.AssertMaxDepth(initialDepth);
+
         if (value is null)
         {
             throw CannotSerializeNullValue();
@@ -49,11 +68,28 @@ internal class CborListConverter<TList, TElement>(
 
         var elementConverter = CborTypeInfo.ResolveWriteConverterForType<TElement>(options);
 
+        var elementIndex = 0;
         foreach (var element in value)
         {
-            elementConverter.Write(writer, element, options);
+            try
+            {
+                elementConverter.Write(writer, element, options);
+            }
+            catch (Exception ex) when (CborSerializerException.IsRecognizedException(ex))
+            {
+                throw EnrichWithParentIndex(ex, initialDepth, elementIndex);
+            }
+
+            elementIndex++;
         }
 
         writer.WriteEndArray();
+    }
+
+    private static Exception EnrichWithParentIndex(Exception ex, int objectDepth, int index)
+    {
+        var name = $"#{objectDepth}: [{index}]";
+
+        return CborSerializerException.WrapWithParentScope(ex, name);
     }
 }

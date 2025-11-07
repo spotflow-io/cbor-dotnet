@@ -48,16 +48,21 @@ public class MapTests
     [DataRow(false)]
     public void Null_Value_For_Non_Nullable_Value_Type_Should_Throws(bool respectNullableAnnotations)
     {
-        var rawWriter = new CborWriter();
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteTextString("Property");
-        rawWriter.WriteNull();
-        rawWriter.WriteEndMap();
-        var cbor = rawWriter.Encode();
+        var writer = new CborWriter();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("Property");
+        writer.WriteNull();
+        writer.WriteEndMap();
+        var cbor = writer.Encode();
 
         var act = () => CborSerializer.Deserialize<Dictionary<string, int>>(cbor, options: new() { RespectNullableAnnotations = respectNullableAnnotations });
 
-        act.Should().Throw<CborDataSerializationException>().WithMessage("Null CBOR value cannot be converted to 'System.Int32'.");
+        act.Should()
+            .Throw<CborSerializerException>()
+            .WithMessage("Null CBOR value cannot be converted to 'System.Int32'.\n\n" +
+                "Path:\n" +
+                "#0: [\"Property\"]\n\n" +
+                "At: byte 10, depth 1.");
 
     }
 
@@ -145,6 +150,37 @@ public class MapTests
 
     }
 
+    [TestMethod]
+    public void Too_Deep_Nesting_Should_Throw_Exception()
+    {
+        var writer = new CborWriter();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("Value");
+        writer.WriteStartMap(null);
+        writer.WriteTextString("Level1");
+        writer.WriteStartMap(null);
+        writer.WriteTextString("Level2");
+        writer.WriteStartMap(null);
+        writer.WriteTextString("Level3");
+        writer.WriteInt32(42);
+        writer.WriteEndMap();
+        writer.WriteEndMap();
+        writer.WriteEndMap();
+        writer.WriteEndMap();
+        var cbor = writer.Encode();
+
+        Action act = () => CborSerializer.Deserialize<TooDeepModel>(cbor, new CborSerializerOptions { MaxDepth = 2 });
+
+        act.Should()
+            .Throw<CborSerializerException>()
+            .WithMessage("Current depth (3) has exceeded maximum allowed depth 2.\n\n" +
+                "Path:\n" +
+                "#2: [\"Level2\"]\n" +
+                "#1: [\"Level1\"]\n" +
+                "#0: Value (*_TooDeepModel)\n\n" +
+                "At: byte 23, depth 3.");
+    }
+
 }
 
 file class TestMapModel
@@ -158,4 +194,10 @@ file class TestMapModel
 file class TestItem
 {
     public required string Value { get; init; }
+}
+
+
+file class TooDeepModel
+{
+    public IDictionary<string, IDictionary<string, IDictionary<string, int>>>? Value { get; init; }
 }

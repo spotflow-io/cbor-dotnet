@@ -55,7 +55,7 @@ internal class CborEnumConverter<T, TUnderlying> : CborConverter<T> where T : st
         {
             if (_isUnderlyingTypeUnsigned)
             {
-                throw new CborDataSerializationException($"Cannot convert negative integer to unsigned enum underlying type: {_typeCode}.");
+                throw new CborSerializerException($"Cannot convert negative integer to unsigned enum underlying type: {_typeCode}.");
             }
 
             var rawValue = reader.ReadInt64();
@@ -75,7 +75,7 @@ internal class CborEnumConverter<T, TUnderlying> : CborConverter<T> where T : st
 
                 if (!Enum.TryParse(typeToConvert, value, ignoreCase: (_caseSensitive is not true), out var enumValue))
                 {
-                    throw new CborDataSerializationException($"Invalid text value for enum '{typeToConvert.Name}': '{value}'.");
+                    throw new CborSerializerException($"Invalid text value for enum '{typeToConvert.Name}': '{value}'.");
                 }
 
                 return (T) enumValue;

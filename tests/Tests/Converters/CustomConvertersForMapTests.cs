@@ -3,7 +3,7 @@ using System.Formats.Cbor;
 using Spotflow.Cbor;
 using Spotflow.Cbor.Converters;
 
-namespace Tests;
+namespace Tests.Converters;
 
 [TestClass]
 public class CustomConvertersForMapTests
@@ -69,6 +69,6 @@ file class ItemTestModelConverter : CborConverter<ItemTestModel>
 
     public override void Write(CborWriter writer, ItemTestModel? value, CborSerializerOptions options)
     {
-        throw new NotImplementedException();
+        throw new NotSupportedException();
     }
 }

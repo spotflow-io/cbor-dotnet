@@ -150,8 +150,9 @@ public class ObjectTests
         Action act = () => CborSerializer.Deserialize<TestModel>(cbor, options);
 
         act.Should()
-            .Throw<CborDataSerializationException>()
-            .WithMessage("Unmapped property found for type '*TestModel' at depth 1.");
+            .Throw<CborSerializerException>()
+            .WithMessage("Unmapped property 'UnmappedProperty'.\n\n" +
+                "At: byte 40, depth 1.");
     }
 
     [TestMethod]
@@ -193,7 +194,12 @@ public class ObjectTests
         var cbor = writer.Encode();
         var act = () => CborSerializer.Deserialize<TestModel>(cbor);
 
-        act.Should().Throw<NotSupportedException>().WithMessage("Cannot serialize or deserialize objects of type 'object'.");
+        act.Should()
+            .Throw<NotSupportedException>()
+            .WithMessage("Cannot serialize or deserialize objects of type 'object'.\n\n" +
+            "Path:\n" +
+            "#0: ObjectProperty (Tests.*_TestModel)\n\n" +
+            "At: byte 16, depth 1.");
     }
 
 
@@ -205,9 +211,14 @@ public class ObjectTests
             ObjectProperty = new { Property1 = 42 }
         };
 
-        var act = () => CborSerializer.Serialize(model);
+        var act = () => CborSerializer.Serialize(model, options: new() { DefaultIgnoreCondition = CborIgnoreCondition.WhenWritingNull });
 
-        act.Should().Throw<NotSupportedException>().WithMessage("Cannot serialize or deserialize objects of type 'object'.");
+        act.Should()
+            .Throw<NotSupportedException>()
+            .WithMessage("Cannot serialize or deserialize objects of type 'object'.\n\n" +
+                "Path:\n" +
+                "#1: ObjectProperty (*_TestModel)\n\n" +
+                "At: byte 16, depth 1.");
     }
 
     [TestMethod]
@@ -271,6 +282,38 @@ public class ObjectTests
         jsonModel.ReadOnlyProperty.Should().Be("ReadOnlyValue");
     }
 
+    [TestMethod]
+    public void Too_Deep_Nesting_Should_Throw_Exception()
+    {
+        var writer = new CborWriter();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("Level2");
+        writer.WriteStartMap(null);
+        writer.WriteTextString("Level3");
+        writer.WriteStartMap(null);
+        writer.WriteTextString("Level4");
+        writer.WriteStartMap(null);
+        writer.WriteTextString("Value");
+        writer.WriteInt32(42);
+        writer.WriteEndMap();
+        writer.WriteEndMap();
+        writer.WriteEndMap();
+        writer.WriteEndMap();
+        var cbor = writer.Encode();
+
+        Action act = () => CborSerializer.Deserialize<TooDeepModelLevel1>(cbor, new CborSerializerOptions { MaxDepth = 2 });
+
+        act.Should()
+            .Throw<CborSerializerException>()
+            .WithMessage("Current depth (3) has exceeded maximum allowed depth 2.\n\n" +
+                "Path:\n" +
+                "#2: Level4 (*_TooDeepModelLevel3)\n" +
+                "#1: Level3 (*_TooDeepModelLevel2)\n" +
+                "#0: Level2 (*_TooDeepModelLevel1)\n\n" +
+                "At: byte 24, depth 3."
+                );
+    }
+
 }
 
 file class TestModel
@@ -303,4 +346,24 @@ file class ClassWithReadOnlyProperty
 {
     public string ReadOnlyProperty => "ReadOnlyValue";
 
+}
+
+file class TooDeepModelLevel1
+{
+    public TooDeepModelLevel2? Level2 { get; init; }
+}
+
+file class TooDeepModelLevel2
+{
+    public TooDeepModelLevel3? Level3 { get; init; }
+}
+
+file class TooDeepModelLevel3
+{
+    public TooDeepModelLevel4? Level4 { get; init; }
+}
+
+file class TooDeepModelLevel4
+{
+    public int? Value { get; init; }
 }

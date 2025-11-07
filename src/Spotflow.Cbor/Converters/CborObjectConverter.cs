@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Collections.Frozen;
 using System.Diagnostics.CodeAnalysis;
 using System.Formats.Cbor;
+using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -16,13 +17,17 @@ internal class CborObjectConverter<TObject>(Func<TObject> factory) : CborConvert
 
     public override TObject? Read(CborReader reader, Type typeToConvert, CborSerializerOptions options)
     {
-        var descriptor = ResolveDescriptor(options);
+        var initialDepth = reader.CurrentDepth;
+
+        options.AssertMaxDepth(initialDepth);
+
+        var objectDescriptor = ResolveDescriptor(options);
 
         var initState = reader.PeekState();
 
         if (initState is not CborReaderState.StartMap)
         {
-            throw new CborDataSerializationException($"Expected start of CBOR map for object of type '{typeof(TObject).Name}' but found '{initState}'.");
+            throw new CborSerializerException($"Expected start of CBOR map representing object but found '{initState}'.");
         }
 
         _ = reader.ReadStartMap();
@@ -33,50 +38,70 @@ internal class CborObjectConverter<TObject>(Func<TObject> factory) : CborConvert
 
         while (reader.PeekState() != CborReaderState.EndMap && reader.PeekState() != CborReaderState.Finished)
         {
-            var property = ReadPropertyKey(reader, descriptor);
+            var property = ReadPropertyKey(reader, out var textName, out var numericName, objectDescriptor);
 
             if (property is null)
             {
                 if (options.UnmappedMemberHandling is CborUnmappedMemberHandling.Disallow)
                 {
-                    throw new CborDataSerializationException($"Unmapped property found for type '{typeToConvert.Name}' at depth {reader.CurrentDepth}.");
+                    var propertyIdentifier = FormatPropertyDisplayName(textName, numericName);
+                    throw new CborSerializerException($"Unmapped property '{propertyIdentifier}'.");
                 }
 
                 reader.SkipValue();
                 continue;
             }
 
-            if (!property.CanSet)
+            try
             {
-                reader.SkipValue();
-                continue;
+                if (!property.CanSet)
+                {
+                    reader.SkipValue();
+                    continue;
+                }
+
+                processedProperties ??= [];
+                processedProperties.Add(property);
+
+                property.SetValue(ref obj, reader, options);
+
             }
-
-            processedProperties ??= [];
-            processedProperties.Add(property);
-
-            property.SetValue(ref obj, reader, options);
+            catch (Exception ex) when (CborSerializerException.IsRecognizedException(ex))
+            {
+                throw EnrichWithParentProperty(ex, initialDepth, objectDescriptor, property);
+            }
 
         }
 
-        if (descriptor.HasRequiredProperties)
+        if (objectDescriptor.HasRequiredProperties)
         {
-            var requiredProperties = descriptor.Properties.Where(p => p.IsRequired).ToList();
+            var requiredProperties = objectDescriptor.Properties.Where(p => p.IsRequired).ToList();
+            List<PropertyDescriptor>? missingProperties = null;
 
             foreach (var requiredProperty in requiredProperties)
             {
                 if (processedProperties is null || !processedProperties.Contains(requiredProperty))
                 {
-                    throw new CborDataSerializationException($"Missing required property '{typeToConvert.Name}.{requiredProperty.TextName}'.");
+                    missingProperties ??= [];
+                    missingProperties.Add(requiredProperty);
                 }
             }
+
+            if (missingProperties?.Count > 0)
+            {
+                var missingPropertiesQuoted = missingProperties.Select(p => $"'{FormatPropertyDisplayName(p.TextName, p.NumericName)}'");
+                var missingPropertiesFormatted = string.Join(", ", missingPropertiesQuoted);
+
+                throw new CborSerializerException($"Required properties are missing: {missingPropertiesFormatted}.");
+            }
+
         }
 
         var finalState = reader.PeekState();
 
         if (finalState is not CborReaderState.EndMap)
         {
-            throw new CborDataSerializationException($"Expected end of CBOR map for type '{typeof(TObject).Name}' but found '{finalState}'.");
+            throw new CborSerializerException($"Expected end of CBOR map for object but found '{finalState}'.");
         }
 
         reader.ReadEndMap();
@@ -85,6 +110,33 @@ internal class CborObjectConverter<TObject>(Func<TObject> factory) : CborConvert
 
     }
 
+    private static Exception EnrichWithParentProperty(Exception ex, int objectDepth, ObjectDescriptor objectDescriptor, PropertyDescriptor propertyDescriptor)
+    {
+        var propertyDisplayName = FormatPropertyDisplayName(propertyDescriptor.TextName, propertyDescriptor.NumericName);
+        var name = $"#{objectDepth}: {propertyDisplayName} ({objectDescriptor.ObjectType.FullName})";
+
+        return CborSerializerException.WrapWithParentScope(ex, name);
+    }
+
+    private static string FormatPropertyDisplayName(string? textName, int? numericName)
+    {
+        if (textName is not null)
+        {
+            if (numericName is not null)
+            {
+                return $"{textName} {{{numericName.Value.ToString(NumberFormatInfo.InvariantInfo)}}}";
+            }
+
+            return textName;
+        }
+
+        if (numericName is not null)
+        {
+            return numericName.Value.ToString(NumberFormatInfo.InvariantInfo);
+        }
+
+        throw new InvalidOperationException("Both text and numeric property names are null.");
+    }
 
     private static ObjectDescriptor ResolveDescriptor(CborSerializerOptions options)
     {
@@ -94,28 +146,39 @@ internal class CborObjectConverter<TObject>(Func<TObject> factory) : CborConvert
 
     }
 
-    private static PropertyDescriptor? ReadPropertyKey(CborReader reader, ObjectDescriptor descriptor)
+    private static PropertyDescriptor? ReadPropertyKey(CborReader reader, out string? textName, out int? numericName, ObjectDescriptor descriptor)
     {
         var state = reader.PeekState();
 
         if (state is CborReaderState.TextString)
         {
             var propertyName = reader.ReadTextString();
+
+            textName = propertyName;
+            numericName = null;
+
             return descriptor.FindPropertyByTextName(propertyName);
         }
 
         if (state is CborReaderState.UnsignedInteger)
         {
             var propertyNumericName = reader.ReadInt32();
+
+            textName = null;
+            numericName = propertyNumericName;
+
             return descriptor.FindPropertyByNumericName(propertyNumericName);
         }
 
-        throw new CborDataSerializationException($"Unsupported CBOR key type '{state}' for model type '{typeof(TObject).Name}'.");
+        throw new CborSerializerException(
+            $"Unsupported CBOR type of object property name. Expected '{CborReaderState.TextString}' or '{CborReaderState.UnsignedInteger}', got '{state}'.");
 
     }
 
     public override void Write(CborWriter writer, TObject? value, CborSerializerOptions options)
     {
+        options.AssertMaxDepth(writer.CurrentDepth);
+
         if (value is null)
         {
             throw CannotSerializeNullValue();
@@ -129,18 +192,28 @@ internal class CborObjectConverter<TObject>(Func<TObject> factory) : CborConvert
 
         foreach (var property in descriptor.Properties)
         {
-            property.Write(ref value, writer, options);
+            try
+            {
+                property.Write(ref value, writer, options);
+            }
+            catch (Exception ex) when (CborSerializerException.IsRecognizedException(ex))
+            {
+                throw EnrichWithParentProperty(ex, writer.CurrentDepth, descriptor, property);
+            }
         }
 
         writer.WriteEndMap();
     }
 
     private class ObjectDescriptor(
+        Type type,
         IReadOnlyList<PropertyDescriptor> properties,
         FrozenDictionary<string, PropertyDescriptor> propertiesByName,
         FrozenDictionary<int, PropertyDescriptor> propertiesByNumericName
         )
     {
+
+        public Type ObjectType => type;
 
         public bool HasRequiredProperties { get; } = properties.Any(p => p.IsRequired);
 
@@ -169,18 +242,19 @@ internal class CborObjectConverter<TObject>(Func<TObject> factory) : CborConvert
 
                 if (!propertiesByTextName.TryAdd(textName, propertyDescriptor))
                 {
-                    throw new CborModelSerializationException($"Duplicate property name '{textName}' found in '{type.Name}'.");
+                    throw new NotSupportedException($"Duplicate property name '{FormatPropertyDisplayName(textName, numericName)}'.");
                 }
 
                 if (numericName.HasValue && !propertiesByNumericName.TryAdd(numericName.Value, propertyDescriptor))
                 {
-                    throw new CborModelSerializationException($"Duplicate property numeric name '{numericName}' found in '{type.Name}'.");
+                    throw new NotSupportedException($"Duplicate property name '{FormatPropertyDisplayName(textName, numericName)}'.");
                 }
 
                 properties.Add(propertyDescriptor);
             }
 
             return new(
+                type,
                 properties,
                 propertiesByTextName.ToFrozenDictionary(propertyTextNameComparer),
                 propertiesByNumericName.ToFrozenDictionary()
@@ -273,28 +347,13 @@ internal class CborObjectConverter<TObject>(Func<TObject> factory) : CborConvert
                 throw new InvalidOperationException("Property cannot be set.");
             }
 
-            try
-            {
-                var converter = CborTypeInfo.ResolveReadConverterForProperty<TProperty>(property, reader, options);
+            var converter = CborTypeInfo.ResolveReadConverterForProperty<TProperty>(property, reader, options);
 
-                var isNullable = (!_isReferenceType && hasNullableAnnotation) || (_isReferenceType && (hasNullableAnnotation || !options.RespectNullableAnnotations));
+            var isNullable = (!_isReferenceType && hasNullableAnnotation) || (_isReferenceType && (hasNullableAnnotation || !options.RespectNullableAnnotations));
 
-                var value = CborSerializer.ResolveValue(isNullable, converter, reader, options);
+            var value = CborSerializer.ResolveValue(isNullable, converter, reader, options);
 
-                _setValueDelegate(ref obj, value);
-            }
-            catch (CborDataSerializationException ex)
-            {
-                var nameFormatted = $"'{typeof(TObject).Name}.{property.Name}'";
-
-                if (NumericName is not null)
-                {
-                    nameFormatted += $" ({NumericName})";
-                }
-
-                throw new CborDataSerializationException($"Property {nameFormatted} at depth {reader.CurrentDepth}: {ex.Message}", ex);
-            }
-
+            _setValueDelegate(ref obj, value);
         }
 
         public override void Write(ref TObject obj, CborWriter writer, CborSerializerOptions options)

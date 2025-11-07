@@ -5,7 +5,7 @@ using System.Text.Json.Serialization;
 using Spotflow.Cbor;
 using Spotflow.Cbor.Converters;
 
-namespace Tests;
+namespace Tests.PrimitiveValues;
 
 [TestClass]
 public class EnumTests
@@ -13,14 +13,14 @@ public class EnumTests
     [TestMethod]
     public void Deserializing_Nullable_With_Existing_String_Member_With_String_Converter_Should_Be_Parsed()
     {
-        var rawWriter = new CborWriter();
+        var writer = new CborWriter();
 
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteTextString("NullableProperty1");
-        rawWriter.WriteTextString("Tuesday");
-        rawWriter.WriteEndMap();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("NullableProperty1");
+        writer.WriteTextString("Tuesday");
+        writer.WriteEndMap();
 
-        var cbor = rawWriter.Encode();
+        var cbor = writer.Encode();
 
         var value = CborSerializer.Deserialize<TestModel>(cbor, options: new() { Converters = { new CborStringEnumConverter() } });
 
@@ -32,51 +32,57 @@ public class EnumTests
     [TestMethod]
     public void Deserializing_Nullable_With_Existing_String_Member_Without_String_Converter_Should_Throw()
     {
-        var rawWriter = new CborWriter();
+        var writer = new CborWriter();
 
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteTextString("NullableProperty1");
-        rawWriter.WriteTextString("Tuesday");
-        rawWriter.WriteEndMap();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("NullableProperty1");
+        writer.WriteTextString("Tuesday");
+        writer.WriteEndMap();
 
-        var cbor = rawWriter.Encode();
+        var cbor = writer.Encode();
 
         var act = () => CborSerializer.Deserialize<TestModel>(cbor);
 
         act.Should()
-          .Throw<CborDataSerializationException>()
-          .WithMessage("Property '*.NullableProperty1' (11) at depth 1: Unexpected CBOR data type. Expected 'UnsignedInteger' or 'NegativeInteger', got 'TextString'.");
+          .Throw<CborSerializerException>()
+          .WithMessage("Unexpected CBOR data type. Expected 'UnsignedInteger' or 'NegativeInteger', got 'TextString'.\n\n" +
+            "Path:\n" +
+            "#0: NullableProperty1 {11} (*_TestModel)\n\n" +
+            "At: byte 19, depth 1.");
     }
 
     [TestMethod]
     public void Deserializing_Nullable_With_Non_Existing_String_Member_Should_Throw()
     {
-        var rawWriter = new CborWriter();
+        var writer = new CborWriter();
 
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteTextString("NullableProperty1");
-        rawWriter.WriteTextString("February");
-        rawWriter.WriteEndMap();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("NullableProperty1");
+        writer.WriteTextString("February");
+        writer.WriteEndMap();
 
-        var cbor = rawWriter.Encode();
+        var cbor = writer.Encode();
 
         Action act = () => CborSerializer.Deserialize<TestModel>(cbor, options: new() { Converters = { new CborStringEnumConverter() } });
         act.Should()
-          .Throw<CborDataSerializationException>()
-       .WithMessage("Property '*TestModel.NullableProperty1' (11) at depth 1: Invalid text value for enum 'DayOfWeek': 'February'.");
+            .Throw<CborSerializerException>()
+            .WithMessage("Invalid text value for enum 'DayOfWeek': 'February'.\n\n" +
+                "Path:\n" +
+                "#0: NullableProperty1 {11} (*_TestModel)\n\n" +
+                "At: byte 28, depth 1.");
     }
 
     [TestMethod]
     public void Deserializing_Nullable_With_Existing_Numeric_Member_Should_Be_Parsed()
     {
-        var rawWriter = new CborWriter();
+        var writer = new CborWriter();
 
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteTextString("NullableProperty1");
-        rawWriter.WriteUInt32(2);
-        rawWriter.WriteEndMap();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("NullableProperty1");
+        writer.WriteUInt32(2);
+        writer.WriteEndMap();
 
-        var cbor = rawWriter.Encode();
+        var cbor = writer.Encode();
 
         var value = CborSerializer.Deserialize<TestModel>(cbor);
 
@@ -88,12 +94,12 @@ public class EnumTests
     [TestMethod]
     public void Deserializing_Nullable_Without_Value_Should_Parse_Null()
     {
-        var rawWriter = new CborWriter();
+        var writer = new CborWriter();
 
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteEndMap();
+        writer.WriteStartMap(null);
+        writer.WriteEndMap();
 
-        var cbor = rawWriter.Encode();
+        var cbor = writer.Encode();
 
         var value = CborSerializer.Deserialize<TestModel>(cbor);
 
@@ -105,16 +111,18 @@ public class EnumTests
     [TestMethod]
     public void Deserializing_With_Incorrect_Value_Data_Type_Should_Throw_Exception()
     {
-        var rawWriter = new CborWriter();
-        rawWriter.WriteStartMap(null);
-        rawWriter.WriteTextString("NullableProperty1");
-        rawWriter.WriteBoolean(true);
-        rawWriter.WriteEndMap();
-        var cbor = rawWriter.Encode();
+        var writer = new CborWriter();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("NullableProperty1");
+        writer.WriteBoolean(true);
+        writer.WriteEndMap();
+        var cbor = writer.Encode();
         Action act = () => CborSerializer.Deserialize<TestModel>(cbor);
         act.Should()
-         .Throw<CborDataSerializationException>()
-       .WithMessage("Property '*TestModel.NullableProperty1' (11) at depth 1: Unexpected CBOR data type. Expected 'UnsignedInteger' or 'NegativeInteger', got 'Boolean'.");
+            .Throw<CborSerializerException>()
+            .WithMessage("Unexpected CBOR data type. Expected 'UnsignedInteger' or 'NegativeInteger', got 'Boolean'.\n\n" +
+                "Path:\n#0: NullableProperty1 {11} (*_TestModel)\n\n" +
+                "At: byte 19, depth 1.");
     }
 
     [TestMethod]
@@ -325,8 +333,11 @@ public class EnumTests
             .WithMessage("The JSON value could not be converted to *");
 
         actCbor.Should()
-            .Throw<CborDataSerializationException>()
-            .WithMessage("Property '*TestModel.ByteEnumProperty' at depth 1: Invalid text value for enum '*ByteEnum': 'XXX'.");
+            .Throw<CborSerializerException>()
+            .WithMessage("Invalid text value for enum '*_ByteEnum': 'XXX'.\n\n" +
+                "Path:\n" +
+                "#0: ByteEnumProperty (*_TestModel)\n\n" +
+                "At: byte 22, depth 1.");
 
 
     }

@@ -91,8 +91,37 @@ public class ListTests
         reader.ReadEndMap();
     }
 
-}
+    [TestMethod]
+    public void Too_Deep_Nesting_Should_Throw_Exception()
+    {
+        var writer = new CborWriter();
+        writer.WriteStartArray(null);
+        writer.WriteStartArray(null);
+        writer.WriteEndArray();
+        writer.WriteStartArray(null);
+        writer.WriteStartArray(null);
+        writer.WriteStartArray(null);
+        writer.WriteInt32(42);
+        writer.WriteEndArray();
+        writer.WriteEndArray();
+        writer.WriteEndArray();
+        writer.WriteEndArray();
 
+        var cbor = writer.Encode();
+
+        Action act = () => CborSerializer.Deserialize<List<List<List<List<int>>>>>(cbor, options: new() { MaxDepth = 2 });
+
+        act.Should()
+            .Throw<CborSerializerException>()
+            .WithMessage("Current depth (3) has exceeded maximum allowed depth 2.\n\n" +
+                "Path:\n" +
+                "#2: [0]\n" +
+                "#1: [0]\n" +
+                "#0: [1]\n\n" +
+                "At: byte 5, depth 3.");
+    }
+
+}
 
 file class TestModel
 {

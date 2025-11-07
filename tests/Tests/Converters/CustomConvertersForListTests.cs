@@ -3,7 +3,7 @@ using System.Formats.Cbor;
 using Spotflow.Cbor;
 using Spotflow.Cbor.Converters;
 
-namespace Tests;
+namespace Tests.Converters;
 
 [TestClass]
 public class CustomConvertersForListTests

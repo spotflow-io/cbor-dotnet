@@ -142,7 +142,7 @@ internal static class CborTypeInfo
 
             if (state is not CborReaderState.StartMap and not CborReaderState.Null)
             {
-                throw new CborDataSerializationException($"CBOR value '{state}' could not be converted to '{type}'.");
+                throw new CborSerializerException($"CBOR value '{state}' could not be converted to '{type}'.");
             }
         }
 
@@ -196,7 +196,7 @@ internal static class CborTypeInfo
 
         if (Activator.CreateInstance(adapterConvertorType, converter) is not CborConverter adapterConverter)
         {
-            throw new CborModelSerializationException($"Failed to create instance of converter type '{type.Name}'.");
+            throw new NotSupportedException($"Failed to create instance of converter type '{type.FullName}'.");
         }
 
         return adapterConverter;
@@ -211,7 +211,7 @@ internal static class CborTypeInfo
 
             if (converter is CborConverterFactory)
             {
-                throw new CborModelSerializationException($"Converter factory '{converter.GetType().Name}' returned another converter factory for type '{type.Name}'.");
+                throw new NotSupportedException($"Converter factory '{converter.GetType().FullName}' returned another converter factory for type '{type.FullName}'.");
             }
         }
 
@@ -266,12 +266,12 @@ internal static class CborTypeInfo
 
         if (Activator.CreateInstance(converterType) is not CborConverter converter)
         {
-            throw new CborModelSerializationException($"Failed to create instance of converter type '{converterType.Name}'.");
+            throw new NotSupportedException($"Failed to create instance of converter type '{converterType.FullName}'.");
         }
 
         if (!CanConvertTypeOrUnderlyingTypeOfNullable(converter, valueType))
         {
-            throw new CborModelSerializationException($"Converter '{converterType.FullName}' cannot resolve value of type '{valueType.Name}'.");
+            throw new NotSupportedException($"Converter '{converterType.FullName}' cannot resolve value of type '{valueType.FullName}'.");
         }
 
         return converter;
@@ -288,7 +288,7 @@ internal static class CborTypeInfo
 
         if (!CanConvertTypeOrUnderlyingTypeOfNullable(converter, valueType))
         {
-            throw new CborModelSerializationException($"Converter '{converterType.FullName}' cannot convert value of type '{valueType.FullName}'.");
+            throw new NotSupportedException($"Converter '{converterType.FullName}' cannot convert value of type '{valueType.FullName}'.");
         }
 
         var baseType = converterType;
@@ -305,7 +305,7 @@ internal static class CborTypeInfo
 
                     if (!valueType.IsAssignableFrom(converterValueType))
                     {
-                        throw new CborModelSerializationException($"Converter type '{converterType.Name}' returing '{converterValueType.Name}' is not compatible with value type '{valueType.Name}'.");
+                        throw new NotSupportedException($"Converter type '{converterType.FullName}' returing '{converterValueType.FullName}' is not compatible with value type '{valueType.FullName}'.");
                     }
 
                     return;
@@ -315,15 +315,21 @@ internal static class CborTypeInfo
             baseType = baseType.BaseType;
         }
 
-        throw new CborModelSerializationException($"Converter type '{converterType.Name}' does not inherit from '{_genericConverterOfTType.Name}'.");
+        throw new NotSupportedException($"Converter type '{converterType.FullName}' does not inherit from '{_genericConverterOfTType.FullName}'.");
     }
 
     private static CborConverter[] PrepareBuiltInConvertersForPrimitiveTypes()
     {
         return [
             new CborStringConverter(),
+            new CborIntegerConverter.Byte(),
+            new CborIntegerConverter.SByte(),
+            new CborIntegerConverter.Int16(),
+            new CborIntegerConverter.UInt16(),
             new CborIntegerConverter.Int32(),
+            new CborIntegerConverter.UInt32(),
             new CborIntegerConverter.Int64(),
+            new CborIntegerConverter.UInt64(),
             new CborBooleanConverter(),
             new CborFloatingPointConverter.Half(),
             new CborFloatingPointConverter.Single(),

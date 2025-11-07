@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Tests;
+namespace Tests.Converters;
 
 #pragma warning disable CA1869 // Cache and reuse 'JsonSerializerOptions' instances
 
