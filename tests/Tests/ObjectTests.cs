@@ -314,6 +314,42 @@ public class ObjectTests
                 );
     }
 
+    [TestMethod]
+    public void Property_Of_Type_Type_Must_Not_Be_Deserialized()
+    {
+        var writer = new CborWriter();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("TypeProperty");
+        writer.WriteTextString("System.String");
+        writer.WriteEndMap();
+        var cbor = writer.Encode();
+        Action act = () => CborSerializer.Deserialize<TestModelWithTypeProperty>(cbor);
+        act.Should()
+            .Throw<NotSupportedException>()
+            .WithMessage("Serialization or deserialization of 'System.Type' is not supported.\n\n" +
+                "Path:\n" +
+                "#0: TypeProperty (*_TestModelWithTypeProperty)\n\n" +
+                "At: byte 14, depth 1.");
+    }
+
+    [TestMethod]
+    public void Property_Of_Type_Type_Must_Not_Be_Serialized()
+    {
+        var model = new TestModelWithTypeProperty
+        {
+            TypeProperty = typeof(string)
+        };
+
+        Action act = () => CborSerializer.Serialize(model);
+
+        act.Should()
+            .Throw<NotSupportedException>()
+            .WithMessage("Serialization or deserialization of 'System.Type' is not supported.\n\n" +
+                "Path:\n" +
+                "#1: TypeProperty (*_TestModelWithTypeProperty)\n\n" +
+                "At: byte 1, depth 1.");
+    }
+
 }
 
 file class TestModel
@@ -329,6 +365,11 @@ readonly file struct ValueTypeTestModel
     public int? NullableProperty { get; init; }
     public int NonNullableProperty { get; init; }
 
+}
+
+file class TestModelWithTypeProperty
+{
+    public Type? TypeProperty { get; init; }
 }
 
 file class ParentClass

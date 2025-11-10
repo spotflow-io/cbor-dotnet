@@ -136,6 +136,11 @@ internal static class CborTypeInfo
 
     private static CborConverter ResolveFallbackConverter(Type type, CborReader? reader, CborSerializerOptions options)
     {
+        if (type == typeof(Type))
+        {
+            throw new NotSupportedException($"Serialization or deserialization of '{typeof(Type).FullName}' is not supported.");
+        }
+
         if (reader is not null)
         {
             var state = reader.PeekState();
