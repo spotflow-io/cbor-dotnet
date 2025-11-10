@@ -11,7 +11,7 @@ internal static class CborIntegerConverter
     {
         public override bool HandleNull => false;
 
-        public override byte Read(CborReader reader, Type typeToConvert, CborSerializerOptions options)
+        public override byte Read(CborReader reader, Type typeToConvert, CborTag? tag, CborSerializerOptions options)
         {
             return (byte) ReadUInt64Value(reader, byte.MaxValue, options);
         }
@@ -26,7 +26,7 @@ internal static class CborIntegerConverter
     {
         public override bool HandleNull => false;
 
-        public override sbyte Read(CborReader reader, Type typeToConvert, CborSerializerOptions options)
+        public override sbyte Read(CborReader reader, Type typeToConvert, CborTag? tag, CborSerializerOptions options)
         {
             return (sbyte) ReadInt64Value(reader, sbyte.MinValue, sbyte.MaxValue, options);
         }
@@ -41,7 +41,7 @@ internal static class CborIntegerConverter
     {
         public override bool HandleNull => false;
 
-        public override short Read(CborReader reader, Type typeToConvert, CborSerializerOptions options)
+        public override short Read(CborReader reader, Type typeToConvert, CborTag? tag, CborSerializerOptions options)
         {
             return (short) ReadInt64Value(reader, short.MinValue, short.MaxValue, options);
         }
@@ -56,7 +56,7 @@ internal static class CborIntegerConverter
     {
         public override bool HandleNull => false;
 
-        public override ushort Read(CborReader reader, Type typeToConvert, CborSerializerOptions options)
+        public override ushort Read(CborReader reader, Type typeToConvert, CborTag? tag, CborSerializerOptions options)
         {
             return (ushort) ReadUInt64Value(reader, ushort.MaxValue, options);
         }
@@ -71,7 +71,7 @@ internal static class CborIntegerConverter
     {
         public override bool HandleNull => false;
 
-        public override int Read(CborReader reader, Type typeToConvert, CborSerializerOptions options)
+        public override int Read(CborReader reader, Type typeToConvert, CborTag? tag, CborSerializerOptions options)
         {
             var int64Value = ReadInt64Value(reader, int.MinValue, int.MaxValue, options);
 
@@ -95,7 +95,7 @@ internal static class CborIntegerConverter
     {
         public override bool HandleNull => false;
 
-        public override uint Read(CborReader reader, Type typeToConvert, CborSerializerOptions options)
+        public override uint Read(CborReader reader, Type typeToConvert, CborTag? tag, CborSerializerOptions options)
         {
             return (uint) ReadUInt64Value(reader, uint.MaxValue, options);
         }
@@ -110,7 +110,7 @@ internal static class CborIntegerConverter
     {
         public override bool HandleNull => false;
 
-        public override long Read(CborReader reader, Type typeToConvert, CborSerializerOptions options)
+        public override long Read(CborReader reader, Type typeToConvert, CborTag? tag, CborSerializerOptions options)
         {
             return ReadInt64Value(reader, long.MinValue, long.MaxValue, options);
         }
@@ -125,7 +125,7 @@ internal static class CborIntegerConverter
     {
         public override bool HandleNull => false;
 
-        public override ulong Read(CborReader reader, Type typeToConvert, CborSerializerOptions options)
+        public override ulong Read(CborReader reader, Type typeToConvert, CborTag? tag, CborSerializerOptions options)
         {
             return ReadUInt64Value(reader, ulong.MaxValue, options);
         }

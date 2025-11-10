@@ -36,18 +36,15 @@ internal class CborEnumConverter<T, TUnderlying> : CborConverter<T> where T : st
 
     public override bool HandleNull => false;
 
-    public override T Read(CborReader reader, Type typeToConvert, CborSerializerOptions options)
+    public override T Read(CborReader reader, Type typeToConvert, CborTag? tag, CborSerializerOptions options)
     {
         var state = reader.PeekState();
 
         if (state is CborReaderState.UnsignedInteger)
         {
             var rawValue = reader.ReadUInt64();
-
             var underlyingValue = _fromUnsignedValueToUnderlyingType(rawValue);
-
             var value = _castFromUnderlying(underlyingValue);
-
             return value;
         }
 
@@ -59,11 +56,8 @@ internal class CborEnumConverter<T, TUnderlying> : CborConverter<T> where T : st
             }
 
             var rawValue = reader.ReadInt64();
-
             var underlyingValue = _fromSignedValueToUnderlyingType(rawValue);
-
             var value = _castFromUnderlying(underlyingValue);
-
             return value;
         }
 

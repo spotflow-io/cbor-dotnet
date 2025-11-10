@@ -619,7 +619,7 @@ file class TestValueTypeConverter(bool handleNull, TestValueType testValue) : Cb
 
     public override bool HandleNull => handleNull;
 
-    public override TestValueType Read(CborReader reader, Type typeToConvert, CborSerializerOptions options)
+    public override TestValueType Read(CborReader reader, Type typeToConvert, CborTag? tag, CborSerializerOptions options)
     {
         reader.SkipValue();
         return testValue;
@@ -634,7 +634,7 @@ file class TestValueTypeConverter(bool handleNull, TestValueType testValue) : Cb
 file class TestNullableValueTypeConverter(bool handleNull, TestValueType? testValue) : CborConverter<TestValueType?>
 {
     public override bool HandleNull => handleNull;
-    public override TestValueType? Read(CborReader reader, Type typeToConvert, CborSerializerOptions options)
+    public override TestValueType? Read(CborReader reader, Type typeToConvert, CborTag? tag, CborSerializerOptions options)
     {
         reader.SkipValue();
         return testValue;
@@ -672,7 +672,7 @@ file class TestReferenceTypeConverter(bool handleNull, TestReferenceType testVal
 {
     public override bool HandleNull => handleNull;
 
-    public override TestReferenceType Read(CborReader reader, Type typeToConvert, CborSerializerOptions options)
+    public override TestReferenceType Read(CborReader reader, Type typeToConvert, CborTag? tag, CborSerializerOptions options)
     {
         reader.SkipValue();
         return testValue;

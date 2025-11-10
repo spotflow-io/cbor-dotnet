@@ -49,7 +49,7 @@ file record ItemTestModel(string? StringValue, int? IntValue);
 
 file class ItemTestModelConverter : CborConverter<ItemTestModel>
 {
-    public override ItemTestModel Read(CborReader reader, Type typeToConvert, CborSerializerOptions options)
+    public override ItemTestModel Read(CborReader reader, Type typeToConvert, CborTag? tag, CborSerializerOptions options)
     {
         var state = reader.PeekState();
 

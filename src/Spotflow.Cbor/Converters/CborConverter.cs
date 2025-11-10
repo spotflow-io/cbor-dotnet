@@ -73,7 +73,7 @@ public abstract class CborConverter<T> : CborConverter
 
     public override bool CanConvert(Type typeToConvert) => typeToConvert == typeof(T);
 
-    public abstract T? Read(CborReader reader, Type typeToConvert, CborSerializerOptions options);
+    public abstract T? Read(CborReader reader, Type typeToConvert, CborTag? tag, CborSerializerOptions options);
 
     public abstract void Write(CborWriter writer, T? value, CborSerializerOptions options);
 

@@ -9,7 +9,7 @@ public class CborBooleanConverter : CborConverter<bool>
 
     private static readonly ConcurrentDictionary<CborBooleanHandling, CborReaderState[]> _allowedStates = [];
 
-    public override bool Read(CborReader reader, Type typeToConvert, CborSerializerOptions options)
+    public override bool Read(CborReader reader, Type typeToConvert, CborTag? tag, CborSerializerOptions options)
     {
         var state = reader.PeekState();
 

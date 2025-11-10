@@ -40,7 +40,7 @@ public class BytesTests
         Action act = () => CborSerializer.Deserialize<TestModel>(cbor);
         act.Should()
             .Throw<CborSerializerException>()
-            .WithMessage("Unexpected CBOR data type. Expected 'ByteString', got 'TextString'.\n\n" +
+            .WithMessage("Unexpected CBOR data type. Expected 'ByteString' or 'StartIndefiniteLengthByteString', got 'TextString'.\n\n" +
                 "Path:\n" +
                 "#0: ByteArrayProperty {4} (*_TestModel)\n\n" +
                 "At: byte 19, depth 1.");
@@ -104,7 +104,7 @@ public class BytesTests
         Action act = () => CborSerializer.Deserialize<TestModel>(cbor);
         act.Should()
             .Throw<CborSerializerException>()
-            .WithMessage("Unexpected CBOR data type. Expected 'ByteString', got 'TextString'.\n\n" +
+            .WithMessage("Unexpected CBOR data type. Expected 'ByteString' or 'StartIndefiniteLengthByteString', got 'TextString'.\n\n" +
                 "Path:\n" +
                 "#0: ReadOnlyMemoryProperty {5} (*_TestModel)\n\n" +
                 "At: byte 24, depth 1.");
@@ -168,7 +168,7 @@ public class BytesTests
         Action act = () => CborSerializer.Deserialize<TestModel>(cbor);
         act.Should()
             .Throw<CborSerializerException>()
-            .WithMessage("Unexpected CBOR data type. Expected 'ByteString', got 'TextString'.\n\n" +
+            .WithMessage("Unexpected CBOR data type. Expected 'ByteString' or 'StartIndefiniteLengthByteString', got 'TextString'.\n\n" +
             "Path:\n" +
             "#0: MemoryProperty {6} (*_TestModel)\n\n" +
             "At: byte 16, depth 1.");
@@ -196,6 +196,67 @@ public class BytesTests
     }
 
     #endregion
+
+
+
+    [TestMethod]
+    public void Deserializing_With_Indefinite_Lenght_Should_Yield_Complete_Value()
+    {
+        var objectWriter = new CborWriter();
+
+        objectWriter.WriteStartMap(null);
+        objectWriter.WriteTextString("ByteArrayProperty");
+        objectWriter.WriteStartIndefiniteLengthByteString();
+        objectWriter.WriteByteString([0x00, 0x01]);
+        objectWriter.WriteByteString([0x02, 0x03]);
+        objectWriter.WriteEndIndefiniteLengthByteString();
+        objectWriter.WriteTextString("ReadOnlyMemoryProperty");
+        objectWriter.WriteStartIndefiniteLengthByteString();
+        objectWriter.WriteByteString([0x10, 0x11]);
+        objectWriter.WriteByteString([0x12, 0x13]);
+        objectWriter.WriteEndIndefiniteLengthByteString();
+        objectWriter.WriteTextString("MemoryProperty");
+        objectWriter.WriteStartIndefiniteLengthByteString();
+        objectWriter.WriteByteString([0x20, 0x21]);
+        objectWriter.WriteByteString([0x22, 0x23]);
+        objectWriter.WriteEndIndefiniteLengthByteString();
+
+        objectWriter.WriteEndMap();
+
+        var directWriter = new CborWriter();
+
+        directWriter.WriteStartIndefiniteLengthByteString();
+        directWriter.WriteByteString([0x04, 0x05]);
+        directWriter.WriteByteString([0x06, 0x07]);
+        directWriter.WriteEndIndefiniteLengthByteString();
+
+        var cborInObject = objectWriter.Encode();
+
+        var cborDirect = directWriter.Encode();
+
+        var objectModel = CborSerializer.Deserialize<TestModel>(cborInObject);
+        var directModelByteArray = CborSerializer.Deserialize<byte[]>(cborDirect);
+        var directModelReadOnlyMemory = CborSerializer.Deserialize<ReadOnlyMemory<byte>>(cborDirect);
+        var directModelMemory = CborSerializer.Deserialize<Memory<byte>>(cborDirect);
+
+        objectModel.Should().NotBeNull();
+        objectModel.ByteArrayProperty.Should().Equal([0x00, 0x01, 0x02, 0x03]);
+        objectModel.ReadOnlyMemoryProperty.Should().NotBeNull();
+        objectModel.ReadOnlyMemoryProperty.Value.ToArray().Should().Equal([0x10, 0x11, 0x12, 0x13]);
+        objectModel.MemoryProperty.Should().NotBeNull();
+        objectModel.MemoryProperty.Value.ToArray().Should().Equal([0x20, 0x21, 0x22, 0x23]);
+
+        directModelByteArray.Should().NotBeNull();
+        directModelByteArray.Should().Equal([0x04, 0x05, 0x06, 0x07]);
+
+        directModelReadOnlyMemory.Should().NotBeNull();
+        directModelReadOnlyMemory.ToArray().Should().Equal([0x04, 0x05, 0x06, 0x07]);
+        directModelMemory.Should().NotBeNull();
+        directModelMemory.ToArray().Should().Equal([0x04, 0x05, 0x06, 0x07]);
+
+
+    }
+
 }
 
 file class TestModel

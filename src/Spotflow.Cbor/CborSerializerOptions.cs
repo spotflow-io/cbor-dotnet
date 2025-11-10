@@ -167,6 +167,30 @@ public class CborSerializerOptions
         }
     }
 
+    private bool _handleUndefinedValuesAsNulls = false;
+    public bool HandleUndefinedValuesAsNulls
+    {
+        get => _handleUndefinedValuesAsNulls;
+        set
+        {
+            AssertNotReadOnly();
+            _handleUndefinedValuesAsNulls = value;
+        }
+    }
+
+    private bool _writeSelfDescribeTag = false;
+
+    public bool WriteSelfDescribeTag
+    {
+        get => _writeSelfDescribeTag;
+        set
+        {
+            AssertNotReadOnly();
+            _writeSelfDescribeTag = value;
+        }
+    }
+
+
     public void MakeReadOnly()
     {
         if (_isReadOnly) // Optimistic check

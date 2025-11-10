@@ -6,9 +6,9 @@ internal class NullableValueTypeAdapterConverter<T>(CborConverter<T> inner) : Cb
 {
     public override bool HandleNull => false;
 
-    public override T? Read(CborReader reader, Type typeToConvert, CborSerializerOptions options)
+    public override T? Read(CborReader reader, Type typeToConvert, CborTag? tag, CborSerializerOptions options)
     {
-        return inner.Read(reader, typeof(T), options);
+        return inner.Read(reader, typeof(T), tag: null, options);
     }
 
     public override void Write(CborWriter writer, T? value, CborSerializerOptions options)

@@ -39,7 +39,7 @@ public class StringTests
         Action act = () => CborSerializer.Deserialize<TestModel>(cbor);
         act.Should()
             .Throw<CborSerializerException>()
-            .WithMessage("Unexpected CBOR data type. Expected 'TextString', got 'Boolean'.\n\n" +
+            .WithMessage("Unexpected CBOR data type. Expected 'TextString' or 'StartIndefiniteLengthTextString', got 'Boolean'.\n\n" +
                 "Path:\n" +
                 "#0: StringProperty {2} (*_TestModel)\n\n" +
                 "At: byte 16, depth 1.");
@@ -90,12 +90,49 @@ public class StringTests
 
         actCbor.Should()
             .Throw<CborSerializerException>()
-            .WithMessage("Unexpected CBOR data type. Expected 'TextString', got 'UnsignedInteger'.\n\n" +
+            .WithMessage("Unexpected CBOR data type. Expected 'TextString' or 'StartIndefiniteLengthTextString', got 'UnsignedInteger'.\n\n" +
                 "Path:\n" +
                 "#0: StringProperty {2} (*_TestModel)\n\n" +
                 "At: byte 16, depth 1.");
 
     }
+
+
+    [TestMethod]
+    public void Deserializing_String_With_Indefinite_Length_Should_Yield_Value()
+    {
+        var objectWriter = new CborWriter();
+
+        objectWriter.WriteStartMap(null);
+        objectWriter.WriteTextString("StringProperty");
+        objectWriter.WriteStartIndefiniteLengthTextString();
+        objectWriter.WriteTextString("aaa");
+        objectWriter.WriteTextString("bbbb");
+        objectWriter.WriteEndIndefiniteLengthTextString();
+        objectWriter.WriteEndMap();
+
+        var directWriter = new CborWriter();
+        directWriter.WriteStartIndefiniteLengthTextString();
+        directWriter.WriteTextString("ccc");
+        directWriter.WriteTextString("dddd");
+        directWriter.WriteEndIndefiniteLengthTextString();
+
+        var cborInObject = objectWriter.Encode();
+
+        var cborDirect = directWriter.Encode();
+
+        var objectModel = CborSerializer.Deserialize<TestModel>(cborInObject);
+        var directModelString = CborSerializer.Deserialize<string>(cborDirect);
+
+        objectModel.Should().NotBeNull();
+
+        objectModel.StringProperty.Should().Be("aaabbbb");
+
+        directModelString.Should().NotBeNull();
+        directModelString.Should().Be("cccdddd");
+
+    }
+
 
 }
 

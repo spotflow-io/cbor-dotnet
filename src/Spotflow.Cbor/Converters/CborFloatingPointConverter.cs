@@ -9,7 +9,7 @@ internal static class CborFloatingPointConverter
     {
         public override bool HandleNull => false;
 
-        public override System.Half Read(CborReader reader, Type typeToConvert, CborSerializerOptions options)
+        public override System.Half Read(CborReader reader, Type typeToConvert, CborTag? tag, CborSerializerOptions options)
         {
             return ReadValue(
                 reader,
@@ -29,7 +29,7 @@ internal static class CborFloatingPointConverter
     {
         public override bool HandleNull => false;
 
-        public override float Read(CborReader reader, Type typeToConvert, CborSerializerOptions options)
+        public override float Read(CborReader reader, Type typeToConvert, CborTag? tag, CborSerializerOptions options)
         {
             return ReadValue(
                 reader,
@@ -49,7 +49,7 @@ internal static class CborFloatingPointConverter
     {
         public override bool HandleNull => false;
 
-        public override double Read(CborReader reader, Type typeToConvert, CborSerializerOptions options)
+        public override double Read(CborReader reader, Type typeToConvert, CborTag? tag, CborSerializerOptions options)
         {
             return ReadValue(
                 reader,

@@ -15,7 +15,7 @@ internal class CborObjectConverter<TObject>(Func<TObject> factory) : CborConvert
 
     public override bool HandleNull => false;
 
-    public override TObject? Read(CborReader reader, Type typeToConvert, CborSerializerOptions options)
+    public override TObject? Read(CborReader reader, Type typeToConvert, CborTag? tag, CborSerializerOptions options)
     {
         var initialDepth = reader.CurrentDepth;
 
@@ -63,7 +63,7 @@ internal class CborObjectConverter<TObject>(Func<TObject> factory) : CborConvert
                 processedProperties ??= [];
                 processedProperties.Add(property);
 
-                property.SetValue(ref obj, reader, options);
+                property.Read(ref obj, reader, options);
 
             }
             catch (Exception ex) when (CborSerializerException.IsRecognizedException(ex))
@@ -283,7 +283,7 @@ internal class CborObjectConverter<TObject>(Func<TObject> factory) : CborConvert
         public abstract bool IsRequired { get; }
 
         public abstract bool CanSet { get; }
-        public abstract void SetValue(ref TObject obj, CborReader reader, CborSerializerOptions options);
+        public abstract void Read(ref TObject obj, CborReader reader, CborSerializerOptions options);
 
         public abstract void Write(ref TObject obj, CborWriter writer, CborSerializerOptions options);
 
@@ -340,7 +340,7 @@ internal class CborObjectConverter<TObject>(Func<TObject> factory) : CborConvert
         public override bool IsRequired { get; } = property.GetCustomAttribute<RequiredMemberAttribute>() is not null;
         [MemberNotNullWhen(true, nameof(_setValueDelegate))]
         public override bool CanSet => _setValueDelegate is not null;
-        public override void SetValue(ref TObject obj, CborReader reader, CborSerializerOptions options)
+        public override void Read(ref TObject obj, CborReader reader, CborSerializerOptions options)
         {
             if (!CanSet)
             {

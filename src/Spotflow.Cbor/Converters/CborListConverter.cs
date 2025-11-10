@@ -7,7 +7,7 @@ internal class CborListConverter<TList, TElement>(
     Func<int?, CborListBuilder<TList, TElement>> listBuilderFactory
     ) : CborConverter<TList> where TList : IEnumerable<TElement>
 {
-    public override TList Read(CborReader reader, Type typeToConvert, CborSerializerOptions options)
+    public override TList Read(CborReader reader, Type typeToConvert, CborTag? tag, CborSerializerOptions options)
     {
         var initialDepth = reader.CurrentDepth;
         options.AssertMaxDepth(initialDepth);

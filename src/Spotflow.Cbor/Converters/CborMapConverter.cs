@@ -9,7 +9,7 @@ internal class CborMapConverter<TDictionary, TKey, TValue>(bool valueIsNullable)
 
     public override bool HandleNull => false;
 
-    public override TDictionary Read(CborReader reader, Type typeToConvert, CborSerializerOptions options)
+    public override TDictionary Read(CborReader reader, Type typeToConvert, CborTag? tag, CborSerializerOptions options)
     {
         var initialDepth = reader.CurrentDepth;
 
@@ -32,7 +32,7 @@ internal class CborMapConverter<TDictionary, TKey, TValue>(bool valueIsNullable)
                 throw new InvalidOperationException("Dictionary key cannot be null.");
             }
 
-            key = keyConverter.Read(reader, typeof(TKey), options);
+            key = keyConverter.Read(reader, typeof(TKey), tag: null, options);
 
             if (key is null)
             {
