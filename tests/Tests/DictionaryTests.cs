@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using System.Collections.Frozen;
 using System.Formats.Cbor;
 
 using Spotflow.Cbor;
@@ -5,7 +7,7 @@ using Spotflow.Cbor;
 namespace Tests;
 
 [TestClass]
-public class MapTests
+public class DictionaryTests
 {
     [TestMethod]
     [DataRow(true)]
@@ -70,7 +72,9 @@ public class MapTests
     [DataRow("Dictionary", typeof(Dictionary<string, TestItem>), typeof(Dictionary<string, TestItem>))]
     [DataRow("IDictionary", typeof(IDictionary<string, TestItem>), typeof(Dictionary<string, TestItem>))]
     [DataRow("IReadOnlyDictionary", typeof(IReadOnlyDictionary<string, TestItem>), typeof(Dictionary<string, TestItem>))]
-    public void Map_Of_Objects_Should_Be_Deserialized(string mapPropertyName, Type expectedMapPropertyType, Type expectedMapType)
+    [DataRow("ConcurrentDictionary", typeof(ConcurrentDictionary<string, TestItem>), typeof(ConcurrentDictionary<string, TestItem>))]
+    [DataRow("FrozenDictionary", typeof(FrozenDictionary<string, TestItem>), typeof(FrozenDictionary<string, TestItem>))]
+    public void Dictionary_Of_Objects_Should_Be_Deserialized(string mapPropertyName, Type expectedDictionaryPropertyType, Type expectedDictionaryType)
     {
         var writer = new CborWriter();
         writer.WriteStartMap(null);
@@ -99,11 +103,11 @@ public class MapTests
 
         mapProperty.Should().NotBeNull();
 
-        mapProperty.PropertyType.Should().Be(expectedMapPropertyType);
+        mapProperty.PropertyType.Should().Be(expectedDictionaryPropertyType);
 
         var map = (IDictionary<string, TestItem>?) mapProperty.GetValue(result);
 
-        map.Should().BeOfType(expectedMapType);
+        map.Should().BeAssignableTo(expectedDictionaryType);
 
         map.Should().NotBeNull();
 
@@ -113,7 +117,7 @@ public class MapTests
     }
 
     [TestMethod]
-    public void Map_Should_Be_Serialized_With_Definite_Lenght()
+    public void Dictionary_Should_Be_Serialized_With_Definite_Length()
     {
         var testModel = new TestMapModel
         {
@@ -188,6 +192,8 @@ file class TestMapModel
     public Dictionary<string, TestItem>? Dictionary { get; init; }
     public IDictionary<string, TestItem>? IDictionary { get; init; }
     public IReadOnlyDictionary<string, TestItem>? IReadOnlyDictionary { get; init; }
+    public ConcurrentDictionary<string, TestItem>? ConcurrentDictionary { get; init; }
+    public FrozenDictionary<string, TestItem>? FrozenDictionary { get; init; }
 
 }
 

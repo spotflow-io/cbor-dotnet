@@ -5,7 +5,7 @@ using Spotflow.Cbor;
 namespace Tests;
 
 [TestClass]
-public class ListTests
+public class CollectionTests
 {
     [TestMethod]
     [DataRow("List", typeof(List<TestItem>), typeof(List<TestItem>))]
@@ -15,7 +15,7 @@ public class ListTests
     [DataRow("IReadOnlyCollection", typeof(IReadOnlyCollection<TestItem>), typeof(List<TestItem>))]
     [DataRow("IEnumerable", typeof(IEnumerable<TestItem>), typeof(List<TestItem>))]
     [DataRow("Array", typeof(TestItem[]), typeof(TestItem[]))]
-    public void List_Of_Objects_Should_Be_Deserialized(string collectionPropertyName, Type expectedCollectionPropertyType, Type expectedCollectionType)
+    public void Collection_Of_Objects_Should_Be_Deserialized(string collectionPropertyName, Type expectedCollectionPropertyType, Type expectedCollectionType)
     {
         var writer = new CborWriter();
         writer.WriteStartMap(null);
@@ -57,7 +57,7 @@ public class ListTests
     }
 
     [TestMethod]
-    public void List_Should_Be_Serialized_With_Definite_Length()
+    public void Collection_Should_Be_Serialized_With_Definite_Length()
     {
         var model = new TestModel
         {

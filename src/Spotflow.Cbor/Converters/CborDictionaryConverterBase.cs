@@ -1,13 +1,39 @@
 using System.Formats.Cbor;
+using System.Linq.Expressions;
 
 namespace Spotflow.Cbor.Converters;
 
-internal class CborMapConverter<TDictionary, TKey, TValue>(bool valueIsNullable) : CborConverter<TDictionary>
-    where TDictionary : IEnumerable<KeyValuePair<TKey, TValue>>
+internal abstract class CborDictionaryConverterBase<TDictionary, TKey, TValue> : CborDictionaryConverterBase<TDictionary, TDictionary, TKey, TValue>
+    where TDictionary : IEnumerable<KeyValuePair<TKey, TValue?>>
+    where TKey : notnull;
+
+internal abstract class CborDictionaryConverterBase<TDictionary, TDictionaryImpl, TKey, TValue> : CborConverter<TDictionary>
+    where TDictionary : IEnumerable<KeyValuePair<TKey, TValue?>>
     where TKey : notnull
 {
+    private readonly bool _valueIsNullable;
+    private Caster? _caster;
+
+    private delegate TDictionary Caster(TDictionaryImpl collection);
+
+    public CborDictionaryConverterBase()
+    {
+        var valueType = typeof(TValue);
+        var valueIsReferenceType = !valueType.IsValueType;
+        _valueIsNullable = valueIsReferenceType || Nullable.GetUnderlyingType(valueType) is not null;
+    }
 
     public override bool HandleNull => false;
+
+    protected abstract TDictionaryImpl CreateDictionary();
+
+    protected abstract TDictionaryImpl AddToDictionary(TDictionaryImpl dictionary, TKey key, TValue? value);
+
+    protected virtual TDictionary ConvertToFinalDictionary(TDictionaryImpl dictionary)
+    {
+        _caster ??= CreateCompiledCaster();
+        return _caster(dictionary);
+    }
 
     public override TDictionary Read(CborReader reader, Type typeToConvert, CborTag? tag, CborSerializerOptions options)
     {
@@ -19,7 +45,7 @@ internal class CborMapConverter<TDictionary, TKey, TValue>(bool valueIsNullable)
 
         reader.ReadStartMap();
 
-        var dictionary = new Dictionary<TKey, TValue?>();
+        var dictionary = CreateDictionary();
 
         while (reader.PeekState() != CborReaderState.EndMap)
         {
@@ -43,9 +69,9 @@ internal class CborMapConverter<TDictionary, TKey, TValue>(bool valueIsNullable)
             {
                 var valueConverter = CborTypeInfo.ResolveReadConverterForType<TValue>(reader, options);
 
-                var value = CborSerializer.ResolveValue(valueIsNullable, valueConverter, reader, options);
+                var value = CborSerializer.ResolveValue(_valueIsNullable, valueConverter, reader, options);
 
-                dictionary.Add(key, value);
+                AddToDictionary(dictionary, key, value);
             }
             catch (Exception ex) when (CborSerializerException.IsRecognizedException(ex))
             {
@@ -57,7 +83,7 @@ internal class CborMapConverter<TDictionary, TKey, TValue>(bool valueIsNullable)
 
         reader.ReadEndMap();
 
-        return (TDictionary) (IEnumerable<KeyValuePair<TKey, TValue>>) dictionary;
+        return ConvertToFinalDictionary(dictionary);
     }
 
     public override void Write(CborWriter writer, TDictionary? value, CborSerializerOptions options)
@@ -114,4 +140,13 @@ internal class CborMapConverter<TDictionary, TKey, TValue>(bool valueIsNullable)
 
         return CborSerializerException.WrapWithParentScope(ex, name);
     }
+
+    private static Caster CreateCompiledCaster()
+    {
+        var collectionImplParameter = Expression.Parameter(typeof(TDictionaryImpl), "dictionary");
+        var body = Expression.Convert(collectionImplParameter, typeof(TDictionary));
+        var lambda = Expression.Lambda<Caster>(body, collectionImplParameter);
+        return lambda.Compile();
+    }
+
 }

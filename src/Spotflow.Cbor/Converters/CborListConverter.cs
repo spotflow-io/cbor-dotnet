@@ -1,95 +1,45 @@
-using System.Formats.Cbor;
+using System.Collections.Frozen;
 
 namespace Spotflow.Cbor.Converters;
 
-internal class CborListConverter<TList, TElement>(
-    bool elementIsNullable,
-    Func<int?, CborListBuilder<TList, TElement>> listBuilderFactory
-    ) : CborConverter<TList> where TList : IEnumerable<TElement>
+internal class CborListConverter() : CborCollectionConverterFactoryBase(typeof(GenericConverter<,>))
 {
-    public override TList Read(CborReader reader, Type typeToConvert, CborTag? tag, CborSerializerOptions options)
+    private static readonly FrozenSet<Type> _supportedTypes = [
+        typeof(IEnumerable<>),
+        typeof(ICollection<>),
+        typeof(IReadOnlyCollection<>),
+        typeof(IList<>),
+        typeof(IReadOnlyList<>),
+        typeof(List<>)];
+
+    public override bool CanConvert(Type typeToConvert)
     {
-        var initialDepth = reader.CurrentDepth;
-        options.AssertMaxDepth(initialDepth);
-
-        AssertReaderState(reader, CborReaderState.StartArray);
-
-        var definitiveLength = reader.ReadStartArray();
-
-        var listBuilder = listBuilderFactory(definitiveLength);
-
-        var elementIndex = 0;
-
-        while (reader.PeekState() != CborReaderState.EndArray)
+        if (!typeToConvert.IsGenericType || typeToConvert.GetGenericArguments().Length != 1)
         {
-            try
-            {
-                var elementConverter = CborTypeInfo.ResolveReadConverterForType<TElement>(reader, options);
-
-                var element = CborSerializer.ResolveValue(elementIsNullable, elementConverter, reader, options);
-
-                listBuilder.Add(element);
-            }
-            catch (Exception ex) when (CborSerializerException.IsRecognizedException(ex))
-            {
-                throw EnrichWithParentIndex(ex, initialDepth, elementIndex);
-            }
-
-            elementIndex++;
+            return false;
         }
 
-        AssertReaderState(reader, CborReaderState.EndArray);
+        var genericTypeDefinitionToConvert = typeToConvert.GetGenericTypeDefinition();
 
-        reader.ReadEndArray();
-
-        return listBuilder.Build();
+        return _supportedTypes.Contains(genericTypeDefinitionToConvert);
     }
 
-    public override void Write(CborWriter writer, TList? value, CborSerializerOptions options)
+    protected override Type GetElementType(Type typeToConvert)
     {
-
-        var initialDepth = writer.CurrentDepth;
-
-        options.AssertMaxDepth(initialDepth);
-
-        if (value is null)
-        {
-            throw CannotSerializeNullValue();
-        }
-
-        int? definiteLength = null;
-
-        if (value.TryGetNonEnumeratedCount(out var count))
-        {
-            definiteLength = count;
-        }
-
-        writer.WriteStartArray(definiteLength);
-
-        var elementConverter = CborTypeInfo.ResolveWriteConverterForType<TElement>(options);
-
-        var elementIndex = 0;
-        foreach (var element in value)
-        {
-            try
-            {
-                elementConverter.Write(writer, element, options);
-            }
-            catch (Exception ex) when (CborSerializerException.IsRecognizedException(ex))
-            {
-                throw EnrichWithParentIndex(ex, initialDepth, elementIndex);
-            }
-
-            elementIndex++;
-        }
-
-        writer.WriteEndArray();
+        return typeToConvert.GetGenericArguments()[0];
     }
 
-    private static Exception EnrichWithParentIndex(Exception ex, int objectDepth, int index)
+    private class GenericConverter<TCollection, TElement> : CborCollectionConverterBase<TCollection, List<TElement?>, TElement>
+        where TCollection : IEnumerable<TElement?>
     {
-        var name = $"#{objectDepth}: [{index}]";
+        protected override List<TElement?> CreateCollection(int? definitiveLenght) => definitiveLenght.HasValue ? new(definitiveLenght.Value) : [];
 
-        return CborSerializerException.WrapWithParentScope(ex, name);
+        protected override List<TElement?> AddToCollection(List<TElement?> collection, TElement? element, int elementIndex)
+        {
+            collection.Add(element);
+            return collection;
+        }
     }
 }
+
+

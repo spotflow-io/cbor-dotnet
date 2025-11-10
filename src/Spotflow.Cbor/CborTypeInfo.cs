@@ -343,8 +343,11 @@ internal static class CborTypeInfo
             new CborByteStringConverter.Array(),
             new CborByteStringConverter.Memory(),
             new CborByteStringConverter.ReadOnlyMemory(),
-            new CborMapConverterFactory(),
-            new CborListConverterFactory(),
+            new CborDictionaryConverter(),
+            new CborConcurrentDictionaryConverter(),
+            new CborFrozenDictionaryConverter(),
+            new CborArrayConverter(),
+            new CborListConverter(),
         ];
     }
 
