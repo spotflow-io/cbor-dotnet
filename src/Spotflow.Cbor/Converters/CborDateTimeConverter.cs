@@ -2,17 +2,21 @@ using System.Globalization;
 
 namespace Spotflow.Cbor.Converters;
 
-internal class CborDateTimeConverter : CborDateTimeConverterBase<DateTime>
+internal class CborDateTimeConverter() : CborDateTimeConverterBase<DateTime>(supportsWritingDateTimeStringTag: true)
 {
-    protected override bool TryParseFromString(string dateString, out DateTime result)
+    protected override DateTime ConvertFromDateTimeOffset(DateTimeOffset dateTimeOffset)
     {
-        return DateTime.TryParse(dateString, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out result);
+        return dateTimeOffset.DateTime;
     }
 
-    protected override DateTime ConvertFromUnixTimeSeconds(long seconds, long ticks = 0)
+    protected override DateTime ConvertFromStringWithoutTag(string dateString)
     {
-        var baseDateTime = DateTimeOffset.FromUnixTimeSeconds(seconds).DateTime;
-        return baseDateTime.AddTicks(ticks);
+        if (!DateTime.TryParse(dateString, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var result))
+        {
+            throw new CborSerializerException($"The text string '{dateString}' could not be parsed as DateTime.");
+        }
+
+        return result;
     }
 
     protected override string FormatToString(DateTime value)

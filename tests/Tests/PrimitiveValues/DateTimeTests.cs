@@ -148,6 +148,24 @@ public class DateTimeTests
     }
 
     [TestMethod]
+    public void Deserializing_DateTime_Without_Tag_As_Floating_Point_Unix_Seconds_Should_Parse()
+    {
+        var writer = new CborWriter();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("DateTimeProperty");
+        writer.WriteDouble(1705315845.5); // 2024-01-15T08:30:45.5Z
+        writer.WriteEndMap();
+
+        var cbor = writer.Encode();
+
+        var model = CborSerializer.Deserialize<TestModel>(cbor);
+
+        model.Should().NotBeNull();
+        var expected = DateTimeOffset.FromUnixTimeSeconds(1705315845).DateTime.AddMilliseconds(500);
+        model.DateTimeProperty.Should().BeCloseTo(expected, TimeSpan.FromMilliseconds(1));
+    }
+
+    [TestMethod]
     public void Deserializing_DateTime_With_Invalid_String_Should_Throw()
     {
         var writer = new CborWriter();
@@ -183,10 +201,7 @@ public class DateTimeTests
 
         act.Should()
             .Throw<CborSerializerException>()
-            .WithMessage("Unexpected CBOR data type. Expected 'TextString', 'UnsignedInteger' or 'NegativeInteger', got 'Boolean'.\n\n" +
-                "Path:\n" +
-                "#0: DateTimeProperty (*_TestModel)\n\n" +
-                "At: byte 18, depth 1.");
+            .WithMessage("Unexpected CBOR data type. Expected 'TextString', 'UnsignedInteger', 'NegativeInteger', 'DoublePrecisionFloat', 'SinglePrecisionFloat' or 'HalfPrecisionFloat', got 'Boolean'.*");
     }
 
     [TestMethod]

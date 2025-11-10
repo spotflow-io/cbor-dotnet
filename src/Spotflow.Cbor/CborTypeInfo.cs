@@ -342,6 +342,8 @@ internal static class CborTypeInfo
             new CborNumberEnumConverter(),
             new CborDateTimeConverter(),
             new CborDateTimeOffsetConverter(),
+            new CborTimeOnlyConverter(),
+            new CborDateOnlyConverter(),
             new CborByteStringConverter.Array(),
             new CborByteStringConverter.Memory(),
             new CborByteStringConverter.ReadOnlyMemory(),

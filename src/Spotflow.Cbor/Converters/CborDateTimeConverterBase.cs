@@ -1,13 +1,14 @@
 using System.Formats.Cbor;
+using System.Globalization;
 
 namespace Spotflow.Cbor.Converters;
 
-internal abstract class CborDateTimeConverterBase<T> : CborConverter<T> where T : struct
+internal abstract class CborDateTimeConverterBase<T>(bool supportsWritingDateTimeStringTag) : CborConverter<T> where T : struct
 {
     public override bool HandleNull => false;
 
-    protected abstract bool TryParseFromString(string dateString, out T result);
-    protected abstract T ConvertFromUnixTimeSeconds(long seconds, long ticks = 0);
+    protected abstract T ConvertFromDateTimeOffset(DateTimeOffset dateTimeOffset);
+    protected abstract T ConvertFromStringWithoutTag(string dateString);
     protected abstract string FormatToString(T value);
 
     public override T Read(CborReader reader, Type typeToConvert, CborTag? tag, CborSerializerOptions options)
@@ -24,73 +25,76 @@ internal abstract class CborDateTimeConverterBase<T> : CborConverter<T> where T 
 
             var dateString = reader.ReadTextString();
 
-            if (!TryParseFromString(dateString, out var result))
+            if (!DateTimeOffset.TryParse(dateString, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var parsedDateTime))
             {
-                throw new CborSerializerException($"The text string '{dateString}' could not be parsed as {typeof(T).Name}.");
+                throw new CborSerializerException($"The text string '{dateString}' could not be parsed as DateTimeOffset.");
             }
 
-            return result;
+            return ConvertFromDateTimeOffset(parsedDateTime);
         }
 
         // Handle tag 1: Unix time seconds (can be integer or floating-point)
         if (tag is CborTag.UnixTimeSeconds)
         {
-            if (state is CborReaderState.UnsignedInteger or CborReaderState.NegativeInteger)
-            {
-                var seconds = reader.ReadInt64();
-                return ConvertFromUnixTimeSeconds(seconds);
-            }
-            else if (state is CborReaderState.DoublePrecisionFloat or CborReaderState.SinglePrecisionFloat or CborReaderState.HalfPrecisionFloat)
-            {
-                var seconds = reader.ReadDouble();
-                var wholeSeconds = (long) seconds;
-                var fractionalSeconds = seconds - wholeSeconds;
-                var ticks = (long) (fractionalSeconds * TimeSpan.TicksPerSecond);
-
-                return ConvertFromUnixTimeSeconds(wholeSeconds, ticks);
-            }
-            else
-            {
-                throw UnexpectedDataType([
-                    CborReaderState.UnsignedInteger,
-                    CborReaderState.NegativeInteger,
-                    CborReaderState.DoublePrecisionFloat,
-                    CborReaderState.SinglePrecisionFloat,
-                    CborReaderState.HalfPrecisionFloat
-                ], state);
-            }
+            return ReadUnixTime(reader, state);
         }
 
-        // No tag: only accept text string (RFC 3339) or integer Unix time
-        // We don't accept floating-point without a tag because it's ambiguous
+        // No tag: accept text string, integer Unix time, or floating-point Unix time
         if (state is CborReaderState.TextString)
         {
             var dateString = reader.ReadTextString();
-
-            if (!TryParseFromString(dateString, out var result))
-            {
-                throw new CborSerializerException($"The text string '{dateString}' could not be parsed as {typeof(T).Name}.");
-            }
-
-            return result;
+            return ConvertFromStringWithoutTag(dateString);
         }
-        else if (state is CborReaderState.UnsignedInteger or CborReaderState.NegativeInteger)
+        else if (state is CborReaderState.UnsignedInteger or CborReaderState.NegativeInteger
+            or CborReaderState.DoublePrecisionFloat or CborReaderState.SinglePrecisionFloat or CborReaderState.HalfPrecisionFloat)
         {
-            var seconds = reader.ReadInt64();
-            return ConvertFromUnixTimeSeconds(seconds);
+            return ReadUnixTime(reader, state);
         }
 
         throw UnexpectedDataType([
             CborReaderState.TextString,
             CborReaderState.UnsignedInteger,
-            CborReaderState.NegativeInteger
+            CborReaderState.NegativeInteger,
+            CborReaderState.DoublePrecisionFloat,
+            CborReaderState.SinglePrecisionFloat,
+            CborReaderState.HalfPrecisionFloat
         ], state);
+    }
+
+    private T ReadUnixTime(CborReader reader, CborReaderState state)
+    {
+        if (state is CborReaderState.UnsignedInteger or CborReaderState.NegativeInteger)
+        {
+            var seconds = reader.ReadInt64();
+            var dateTimeOffset = DateTimeOffset.FromUnixTimeSeconds(seconds);
+            return ConvertFromDateTimeOffset(dateTimeOffset);
+        }
+        else if (state is CborReaderState.DoublePrecisionFloat or CborReaderState.SinglePrecisionFloat or CborReaderState.HalfPrecisionFloat)
+        {
+            var seconds = reader.ReadDouble();
+            var wholeSeconds = (long) seconds;
+            var fractionalSeconds = seconds - wholeSeconds;
+            var ticks = (long) (fractionalSeconds * TimeSpan.TicksPerSecond);
+
+            var dateTimeOffset = DateTimeOffset.FromUnixTimeSeconds(wholeSeconds).AddTicks(ticks);
+            return ConvertFromDateTimeOffset(dateTimeOffset);
+        }
+        else
+        {
+            throw UnexpectedDataType([
+                CborReaderState.UnsignedInteger,
+                CborReaderState.NegativeInteger,
+                CborReaderState.DoublePrecisionFloat,
+                CborReaderState.SinglePrecisionFloat,
+                CborReaderState.HalfPrecisionFloat
+            ], state);
+        }
     }
 
     public override void Write(CborWriter writer, T value, CborSerializerOptions options)
     {
-        // Only write tag if explicitly enabled via options
-        if (options.WriteDateTimeStringTag)
+        // Only write tag if explicitly enabled via options AND this converter supports it
+        if (options.WriteDateTimeStringTag && supportsWritingDateTimeStringTag)
         {
             writer.WriteTag(CborTag.DateTimeString);
         }
