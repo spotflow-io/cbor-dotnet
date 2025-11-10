@@ -190,6 +190,30 @@ public class CborSerializerOptions
         }
     }
 
+    private bool _writeDateTimeStringTag = false;
+
+    public bool WriteDateTimeStringTag
+    {
+        get => _writeDateTimeStringTag;
+        set
+        {
+            AssertNotReadOnly();
+            _writeDateTimeStringTag = value;
+        }
+    }
+
+    private bool _writeUnixTimeSecondsTag = false;
+
+    public bool WriteUnixTimeSecondsTag
+    {
+        get => _writeUnixTimeSecondsTag;
+        set
+        {
+            AssertNotReadOnly();
+            _writeUnixTimeSecondsTag = value;
+        }
+    }
+
 
     public void MakeReadOnly()
     {

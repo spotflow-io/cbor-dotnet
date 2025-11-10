@@ -340,6 +340,8 @@ internal static class CborTypeInfo
             new CborFloatingPointConverter.Single(),
             new CborFloatingPointConverter.Double(),
             new CborNumberEnumConverter(),
+            new CborDateTimeConverter(),
+            new CborDateTimeOffsetConverter(),
             new CborByteStringConverter.Array(),
             new CborByteStringConverter.Memory(),
             new CborByteStringConverter.ReadOnlyMemory(),

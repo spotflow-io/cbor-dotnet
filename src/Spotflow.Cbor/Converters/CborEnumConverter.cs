@@ -14,7 +14,6 @@ internal class CborEnumConverter<T, TUnderlying> : CborConverter<T> where T : st
     private readonly Func<long, TUnderlying> _fromSignedValueToUnderlyingType;
     private readonly bool _isUnderlyingTypeUnsigned;
     private readonly Func<TUnderlying, T> _castFromUnderlying;
-    private readonly bool _caseSensitive;
 
     private readonly FrozenDictionary<string, T> _nameToValueMap;
     private readonly FrozenDictionary<T, string> _valueToNameMap;
@@ -36,7 +35,7 @@ internal class CborEnumConverter<T, TUnderlying> : CborConverter<T> where T : st
         _fromUnsignedValueToUnderlyingType = CompileFromUnsignedValueToUnderlyingType(_typeCode);
         _fromSignedValueToUnderlyingType = CompileFromSignedValueToUnderlyingType(_typeCode);
         _castFromUnderlying = CompileCastFromUnderlyingType();
-        _caseSensitive = caseSensitive;
+
 
         (_nameToValueMap, _valueToNameMap) = PrepareMaps(caseSensitive);
 
