@@ -1,5 +1,7 @@
+using System.Collections.Frozen;
 using System.Formats.Cbor;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace Spotflow.Cbor.Converters;
 
@@ -13,6 +15,9 @@ internal class CborEnumConverter<T, TUnderlying> : CborConverter<T> where T : st
     private readonly bool _isUnderlyingTypeUnsigned;
     private readonly Func<TUnderlying, T> _castFromUnderlying;
     private readonly bool _caseSensitive;
+
+    private readonly FrozenDictionary<string, T> _nameToValueMap;
+    private readonly FrozenDictionary<T, string> _valueToNameMap;
 
     public CborEnumConverter(bool serializeAsString, bool allowDeserializationFromString, bool caseSensitive)
     {
@@ -32,6 +37,48 @@ internal class CborEnumConverter<T, TUnderlying> : CborConverter<T> where T : st
         _fromSignedValueToUnderlyingType = CompileFromSignedValueToUnderlyingType(_typeCode);
         _castFromUnderlying = CompileCastFromUnderlyingType();
         _caseSensitive = caseSensitive;
+
+        (_nameToValueMap, _valueToNameMap) = PrepareMaps(caseSensitive);
+
+    }
+
+    private static (FrozenDictionary<string, T>, FrozenDictionary<T, string>) PrepareMaps(bool caseSensitive)
+    {
+        var comparer = caseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
+
+        var regularNames = Enum.GetNames<T>();
+
+        var nameToValueBuilder = new Dictionary<string, T>(comparer);
+        var valueToNameBuilder = new Dictionary<T, string>();
+
+        foreach (var name in regularNames)
+        {
+            var enumValue = Enum.Parse<T>(name);
+            var customName = GetCustomEnumMemberName(name);
+
+            var resolvedName = customName ?? name;
+
+            if (!nameToValueBuilder.TryAdd(resolvedName, enumValue))
+            {
+                throw new NotSupportedException($"Duplicate member name detected for enum '{typeof(T).FullName}': '{resolvedName}'.");
+            }
+
+            valueToNameBuilder[enumValue] = resolvedName;
+
+        }
+
+        var nameToValueMap = nameToValueBuilder.ToFrozenDictionary(comparer);
+        var valueToNameMap = valueToNameBuilder.ToFrozenDictionary();
+
+        return (nameToValueMap, valueToNameMap);
+    }
+
+    private static string? GetCustomEnumMemberName(string regularName)
+    {
+        var type = typeof(T);
+        var memInfo = type.GetMember(regularName);
+        var attribute = memInfo[0].GetCustomAttribute<CborStringEnumMemberNameAttribute>(false);
+        return attribute?.Name;
     }
 
     public override bool HandleNull => false;
@@ -67,12 +114,12 @@ internal class CborEnumConverter<T, TUnderlying> : CborConverter<T> where T : st
             {
                 var value = reader.ReadTextString();
 
-                if (!Enum.TryParse(typeToConvert, value, ignoreCase: (_caseSensitive is not true), out var enumValue))
+                if (_nameToValueMap.TryGetValue(value, out var enumValueFromMap))
                 {
-                    throw new CborSerializerException($"Invalid text value for enum '{typeToConvert.Name}': '{value}'.");
+                    return enumValueFromMap;
                 }
 
-                return (T) enumValue;
+                throw new CborSerializerException($"Invalid text value for enum '{typeToConvert.Name}': '{value}'.");
             }
 
             throw UnexpectedDataType([CborReaderState.UnsignedInteger, CborReaderState.NegativeInteger, CborReaderState.TextString], state);
@@ -88,7 +135,7 @@ internal class CborEnumConverter<T, TUnderlying> : CborConverter<T> where T : st
     {
         if (_serializeAsString)
         {
-            var textValue = Enum.GetName(value);
+            var textValue = _valueToNameMap.GetValueOrDefault(value);
 
             if (textValue is null)
             {

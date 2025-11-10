@@ -369,6 +369,76 @@ public class EnumTests
         modelCbor.ByteEnumProperty.Should().Be((ByteEnum) 42);
 
     }
+
+    [TestMethod]
+    public void Serializing_Enum_With_Custom_Names_Should_Yield_Custom_Names_When_String_Converter_Provided()
+    {
+        var model = new TestModel
+        {
+            EnumWithCustomNamesProperty = EnumWithCustomNames.RegularName1
+        };
+        var options = new CborSerializerOptions()
+        {
+            PreferNumericPropertyNames = false,
+            DefaultIgnoreCondition = CborIgnoreCondition.WhenWritingNull,
+            Converters = { new CborStringEnumConverter() }
+        };
+        var cbor = CborSerializer.Serialize(model, options);
+        var reader = new CborReader(cbor);
+        reader.ReadStartMap();
+        reader.ReadTextString().Should().Be("EnumWithCustomNamesProperty");
+        reader.ReadTextString().Should().Be("CustomName1");
+        reader.ReadEndMap();
+    }
+
+
+    [TestMethod]
+    public void Deserializing_Enum_With_Custom_Names_Should_Be_Parsed_When_String_Converter_Provided()
+    {
+        var writer = new CborWriter();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("EnumWithCustomNamesProperty");
+        writer.WriteTextString("CustomName1");
+        writer.WriteEndMap();
+        var cbor = writer.Encode();
+        var value = CborSerializer.Deserialize<TestModel>(cbor, options: new() { Converters = { new CborStringEnumConverter() } });
+        value.Should().NotBeNull();
+        value.EnumWithCustomNamesProperty.Should().Be(EnumWithCustomNames.RegularName1);
+    }
+
+    [TestMethod]
+    public void Deserializing_Enum_With_Custom_Names_Should_Throw_When_String_Converter_Provided_And_Name_Not_Found()
+    {
+        var json = """
+        {
+            "EnumWithCustomNamesProperty": "RegularName1"
+        }
+        """;
+
+        var writer = new CborWriter();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("EnumWithCustomNamesProperty");
+        writer.WriteTextString("RegularName1");
+        writer.WriteEndMap();
+
+        var cbor = writer.Encode();
+
+        Action actJson = () => JsonSerializer.Deserialize<TestModel>(json, options: new() { Converters = { new JsonStringEnumConverter() } });
+
+        Action actCbor = () => CborSerializer.Deserialize<TestModel>(cbor, options: new() { Converters = { new CborStringEnumConverter() } });
+
+        actJson.Should()
+            .Throw<JsonException>()
+            .WithMessage("The JSON value could not be converted to *");
+
+        actCbor.Should()
+            .Throw<CborSerializerException>()
+            .WithMessage("Invalid text value for enum '*_EnumWithCustomNames': 'RegularName1'.\n\n" +
+                "Path:\n" +
+                "#0: EnumWithCustomNamesProperty (*_TestModel)\n\n" +
+                "At: byte 43, depth 1.");
+
+    }
 }
 
 file class TestModel
@@ -379,20 +449,23 @@ file class TestModel
     [CborProperty(NumericName = 12)]
     public DateTimeKind? NullableProperty2 { get; init; }
 
-    public ByteEnum? ByteEnumProperty { get; set; }
-    public SByteEnum? SByteEnumProperty1 { get; set; }
-    public SByteEnum? SByteEnumProperty2 { get; set; }
-    public ShortEnum? ShortEnumProperty1 { get; set; }
-    public ShortEnum? ShortEnumProperty2 { get; set; }
-    public UShortEnum? UShortEnumProperty { get; set; }
-    public IntEnum? IntEnumProperty1 { get; set; }
-    public IntEnum? IntEnumProperty2 { get; set; }
-    public UIntEnum? UIntEnumProperty { get; set; }
-    public LongEnum? LongEnumProperty1 { get; set; }
-    public LongEnum? LongEnumProperty2 { get; set; }
-    public ULongEnum? ULongEnumProperty { get; set; }
+    public ByteEnum? ByteEnumProperty { get; init; }
+    public SByteEnum? SByteEnumProperty1 { get; init; }
+    public SByteEnum? SByteEnumProperty2 { get; init; }
+    public ShortEnum? ShortEnumProperty1 { get; init; }
+    public ShortEnum? ShortEnumProperty2 { get; init; }
+    public UShortEnum? UShortEnumProperty { get; init; }
+    public IntEnum? IntEnumProperty1 { get; init; }
+    public IntEnum? IntEnumProperty2 { get; init; }
+    public UIntEnum? UIntEnumProperty { get; init; }
+    public LongEnum? LongEnumProperty1 { get; init; }
+    public LongEnum? LongEnumProperty2 { get; init; }
+    public ULongEnum? ULongEnumProperty { get; init; }
+    public EnumWithCustomNames? EnumWithCustomNamesProperty { get; init; }
 
 }
+
+
 
 file enum ByteEnum : byte { Value }
 file enum SByteEnum : sbyte { ValueNegative = -1, ValuePositive = 1 }
@@ -402,3 +475,12 @@ file enum IntEnum : int { ValueNegative = -1, ValuePositive = 1 }
 file enum UIntEnum : uint { Value }
 file enum LongEnum : long { ValueNegative = -1, ValuePositive = 1 }
 file enum ULongEnum : ulong { Value }
+
+file enum EnumWithCustomNames
+{
+    [CborStringEnumMemberName("CustomName1")]
+    [JsonStringEnumMemberName("CustomName1")]
+    RegularName1,
+
+    RegularName2
+}
