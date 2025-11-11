@@ -2,6 +2,11 @@
 
 A high-performance .NET library for serializing and deserializing CBOR (Concise Binary Object Representation) data. Built on top of `System.Formats.Cbor`, this library provides a simple, type-safe API similar to `System.Text.Json` for working with CBOR data.
 
+<p align="left">
+  <img src="logo.png" alt="Spotflow.Cbor Logo" width="300"/>
+</p>
+
+
 ## Features
 
 - Type-safe API with support for generic types.
