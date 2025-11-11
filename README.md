@@ -10,7 +10,8 @@ A high-performance .NET library for serializing and deserializing CBOR (Concise 
 ## Features
 
 - Type-safe API with support for generic types.
-- Built on top of the [`System.Formats.Cbor`](https://learn.microsoft.com/en-us/dotnet/api/system.formats.cbor) .NET library.
+- Built on top of the [`System.Formats.Cbor`](https://learn.microsoft.com/en-us/dotnet/api/system.formats.cbor).
+- Interface and behavior modeled after [`System.Text.Json`](https://learn.microsoft.com/en-us/dotnet/api/system.text.json).
 - Support for custom converters.
 - Strong nullability support with nullable reference types.
 - Support for `required` property modifier.
