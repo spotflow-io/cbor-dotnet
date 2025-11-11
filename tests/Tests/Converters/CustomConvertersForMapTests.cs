@@ -49,6 +49,8 @@ file record ItemTestModel(string? StringValue, int? IntValue);
 
 file class ItemTestModelConverter : CborConverter<ItemTestModel>
 {
+    public override bool HandleNull => false;
+
     public override ItemTestModel Read(CborReader reader, Type typeToConvert, CborTag? tag, CborSerializerOptions options)
     {
         var state = reader.PeekState();

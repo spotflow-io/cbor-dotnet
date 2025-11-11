@@ -6,6 +6,8 @@ internal static class CborByteStringConverter
 {
     public class Array : CborConverter<byte[]>
     {
+        public override bool HandleNull => false;
+
         public override byte[] Read(CborReader reader, Type typeToConvert, CborTag? tag, CborSerializerOptions options)
         {
             AssertReaderState(reader, CborReaderState.ByteString, CborReaderState.StartIndefiniteLengthByteString);
@@ -26,6 +28,8 @@ internal static class CborByteStringConverter
 
     public class Memory : CborConverter<Memory<byte>>
     {
+        public override bool HandleNull => false;
+
         public override Memory<byte> Read(CborReader reader, Type typeToConvert, CborTag? tag, CborSerializerOptions options)
         {
             AssertReaderState(reader, CborReaderState.ByteString, CborReaderState.StartIndefiniteLengthByteString);
@@ -40,6 +44,8 @@ internal static class CborByteStringConverter
 
     public class ReadOnlyMemory : CborConverter<ReadOnlyMemory<byte>>
     {
+        public override bool HandleNull => false;
+
         public override ReadOnlyMemory<byte> Read(CborReader reader, Type typeToConvert, CborTag? tag, CborSerializerOptions options)
         {
             AssertReaderState(reader, CborReaderState.ByteString, CborReaderState.StartIndefiniteLengthByteString);

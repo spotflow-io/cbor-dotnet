@@ -80,6 +80,8 @@ file record ItemTestModelWithConverterOnType(string? StringValue, int? IntValue)
 
 file class ItemTestModelConverter : CborConverter<ItemTestModelWithConverterOnType>
 {
+    public override bool HandleNull => false;
+
     public override ItemTestModelWithConverterOnType Read(CborReader reader, Type typeToConvert, CborTag? tag, CborSerializerOptions options)
     {
         var state = reader.PeekState();
@@ -107,6 +109,8 @@ file class ItemTestModelConverter : CborConverter<ItemTestModelWithConverterOnTy
 
 file class ListConverter<T> : CborConverter<IReadOnlyList<T>>
 {
+    public override bool HandleNull => false;
+
     public override IReadOnlyList<T>? Read(CborReader reader, Type typeToConvert, CborTag? tag, CborSerializerOptions options)
     {
         reader.ReadStartArray();

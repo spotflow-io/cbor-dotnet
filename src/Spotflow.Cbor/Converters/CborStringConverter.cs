@@ -4,6 +4,8 @@ namespace Spotflow.Cbor.Converters;
 
 internal class CborStringConverter : CborConverter<string>
 {
+    public override bool HandleNull => false;
+
     public override string? Read(CborReader reader, Type typeToConvert, CborTag? tag, CborSerializerOptions options)
     {
         AssertReaderState(reader, CborReaderState.TextString, CborReaderState.StartIndefiniteLengthTextString);

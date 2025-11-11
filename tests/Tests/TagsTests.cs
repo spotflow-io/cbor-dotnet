@@ -135,6 +135,8 @@ file class CustomType
 
 file class CustomTagAwareConverter : CborConverter<CustomType>
 {
+    public override bool HandleNull => false;
+
     public override CustomType? Read(CborReader reader, Type typeToConvert, CborTag? tag, CborSerializerOptions options)
     {
         return new CustomType

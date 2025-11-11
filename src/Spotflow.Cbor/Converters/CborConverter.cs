@@ -63,13 +63,12 @@ public abstract class CborConverter
 
 public abstract class CborConverter<T> : CborConverter
 {
-    private static readonly Lazy<bool> _handleNullLazy = new(static () => typeof(T).IsValueType);
+
 
     /// <summary>
     /// Indicates whether this converter can handle null values.
     /// </summary>
-    /// <remarks>Default is <see cref="true"/> for value types and <see cref="false"/> for reference types.</remarks>
-    public virtual bool HandleNull => _handleNullLazy.Value;
+    public abstract bool HandleNull { get; }
 
     public override bool CanConvert(Type typeToConvert) => typeToConvert == typeof(T);
 
