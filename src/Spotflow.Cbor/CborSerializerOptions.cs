@@ -26,7 +26,7 @@ public class CborSerializerOptions
     public CborSerializerOptions()
     {
         _readersPool = new(static o => new(ReadOnlyMemory<byte>.Empty, o.ConformanceMode), this);
-        _writersPool = new(static o => new(o.ConformanceMode, o.ConvertIndefiniteLengthEncodings), this);
+        _writersPool = new(static o => new(o.ConformanceMode, convertIndefiniteLengthEncodings: o.ConvertIndefiniteLengthEncodings), this);
     }
 
     private CborIgnoreCondition _defaultIgnoreCondition = CborIgnoreCondition.Never;
@@ -42,7 +42,7 @@ public class CborSerializerOptions
         }
     }
 
-    private bool _respectNullableAnnotations = true;
+    private bool _respectNullableAnnotations = false;
 
     public bool RespectNullableAnnotations
     {
@@ -201,19 +201,6 @@ public class CborSerializerOptions
             _writeDateTimeStringTag = value;
         }
     }
-
-    private bool _writeUnixTimeSecondsTag = false;
-
-    public bool WriteUnixTimeSecondsTag
-    {
-        get => _writeUnixTimeSecondsTag;
-        set
-        {
-            AssertNotReadOnly();
-            _writeUnixTimeSecondsTag = value;
-        }
-    }
-
 
     public void MakeReadOnly()
     {
