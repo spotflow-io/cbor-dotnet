@@ -326,6 +326,21 @@ public class Person
 }
 ```
 
+### Ignoring Properties
+
+```csharp
+public class User
+{
+    public string Username { get; set; }
+    
+    [CborIgnore]  // Never serialized or deserialized
+    public string Password { get; set; }
+    
+    [CborIgnore(Condition = CborIgnoreCondition.WhenWritingNull)]  // Ignored only when null
+    public string? Bio { get; set; }
+}
+```
+
 ### Enum Customization
 
 ```csharp
@@ -395,4 +410,3 @@ if (CborSerializer.StartsWithSelfDescribeTag(cborData))
 {
     // Handle self-described CBOR
 }
-```

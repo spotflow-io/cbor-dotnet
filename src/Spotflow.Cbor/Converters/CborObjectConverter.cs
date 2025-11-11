@@ -186,7 +186,11 @@ internal class CborObjectConverter<TObject>(Func<TObject> factory) : CborConvert
 
         var descriptor = ResolveDescriptor(options);
 
-        int? count = options.DefaultIgnoreCondition is CborIgnoreCondition.Never ? descriptor.Properties.Count : null;
+        // Use indefinite length if properties can be conditionally ignored
+        var hasDynamicConditionalIgnore = options.DefaultIgnoreCondition is CborIgnoreCondition.WhenWritingNull
+            || descriptor.Properties.Any(p => p.IgnoreCondition is CborIgnoreCondition.WhenWritingNull);
+
+        int? count = hasDynamicConditionalIgnore ? null : descriptor.Properties.Count;
 
         writer.WriteStartMap(count);
 
@@ -236,6 +240,13 @@ internal class CborObjectConverter<TObject>(Func<TObject> factory) : CborConvert
 
             foreach (var property in type.GetProperties())
             {
+                // Check if property should be ignored
+                var ignoreAttribute = property.GetCustomAttribute<CborIgnoreAttribute>();
+                if (ignoreAttribute is not null && ignoreAttribute.Condition is CborIgnoreCondition.Always)
+                {
+                    continue;
+                }
+
                 var propertyDescriptor = PropertyDescriptor.Create(property, nullabilityInfoContext, options);
 
                 var (textName, numericName) = (propertyDescriptor.TextName, propertyDescriptor.NumericName);
@@ -281,6 +292,7 @@ internal class CborObjectConverter<TObject>(Func<TObject> factory) : CborConvert
         public string TextName => textName;
         public int? NumericName => numericName;
         public abstract bool IsRequired { get; }
+        public abstract CborIgnoreCondition IgnoreCondition { get; }
 
         public abstract bool CanSet { get; }
         public abstract void Read(ref TObject obj, CborReader reader, CborSerializerOptions options);
@@ -338,8 +350,11 @@ internal class CborObjectConverter<TObject>(Func<TObject> factory) : CborConvert
         private readonly bool _isReferenceType = !property.PropertyType.IsValueType;
 
         public override bool IsRequired { get; } = property.GetCustomAttribute<RequiredMemberAttribute>() is not null;
+        public override CborIgnoreCondition IgnoreCondition { get; } = property.GetCustomAttribute<CborIgnoreAttribute>()?.Condition ?? CborIgnoreCondition.Never;
+
         [MemberNotNullWhen(true, nameof(_setValueDelegate))]
         public override bool CanSet => _setValueDelegate is not null;
+
         public override void Read(ref TObject obj, CborReader reader, CborSerializerOptions options)
         {
             if (!CanSet)
@@ -362,7 +377,7 @@ internal class CborObjectConverter<TObject>(Func<TObject> factory) : CborConvert
 
             var value = _getValueDelegate(ref obj);
 
-            if (value is null && options.DefaultIgnoreCondition is CborIgnoreCondition.WhenWritingNull)
+            if (value is null && (options.DefaultIgnoreCondition is CborIgnoreCondition.WhenWritingNull || IgnoreCondition is CborIgnoreCondition.WhenWritingNull))
             {
                 return;
             }

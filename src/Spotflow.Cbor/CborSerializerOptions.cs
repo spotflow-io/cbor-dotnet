@@ -36,8 +36,13 @@ public class CborSerializerOptions
         get => _defaultIgnoreCondition;
         set
         {
-
             AssertNotReadOnly();
+
+            if (value is CborIgnoreCondition.Always)
+            {
+                throw new ArgumentException($"'{CborIgnoreCondition.Always}' is not valid for '{nameof(DefaultIgnoreCondition)}'. Use the '{nameof(CborIgnoreAttribute)}' attribute to ignore specific properties.", nameof(value));
+            }
+
             _defaultIgnoreCondition = value;
         }
     }
