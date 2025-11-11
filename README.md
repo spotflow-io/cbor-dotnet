@@ -415,3 +415,16 @@ if (CborSerializer.StartsWithSelfDescribeTag(cborData))
 {
     // Handle self-described CBOR
 }
+
+
+## Maintainers
+
+-   [Tomáš Pajurek](https://github.com/tomas-pajurek) ([Spotflow](https://spotflow.io))
+
+## Contributing
+
+Please read our [Contributing Guidelines](./CONTRIBUTING.md) to learn how you can contribute to this project.
+
+## License
+
+This project is licensed under the [MIT license](./LICENSE.md).
