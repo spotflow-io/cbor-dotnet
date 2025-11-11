@@ -348,6 +348,7 @@ internal static class CborTypeInfo
             new CborTimeOnlyConverter(),
             new CborDateOnlyConverter(),
             new CborGuidConverter(),
+            new CborUriConverter(),
             new CborByteStringConverter.Array(),
             new CborByteStringConverter.Memory(),
             new CborByteStringConverter.ReadOnlyMemory(),
