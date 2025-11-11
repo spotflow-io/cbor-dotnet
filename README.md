@@ -17,7 +17,13 @@ A high-performance .NET library for serializing and deserializing CBOR (Concise 
 - Flexible configuration options.
 - High-performance serialization and deserialization.
 
+
+![CI status](https://github.com/spotflow-io/cbor-dotnet/actions/workflows/ci.yml/badge.svg?branch=main)
+
+
 ## Installation
+
+ [![NuGet](https://img.shields.io/nuget/v/Spotflow.Cbor.svg)](https://www.nuget.org/packages/Spotflow.Cbor)
 
 ```bash
 dotnet add package Spotflow.Cbor
