@@ -232,11 +232,13 @@ The library is designed with performance in mind:
    - Property-to-converter mappings
    - Fallback converter cache
    - Nullability type checks
-* **Zero reflection**: On subsequent serializations/deserializations for the same types when using the same `CborSerializerOptions` instance.
+* **Zero reflection**: On subsequent serializations/deserializations for the same types when using the same `CborSerializerOptions` instance, using compiled [System.Linq.Expressions](https://learn.microsoft.com/en-us/dotnet/api/system.linq.expressions) delegates.
 * **Zero-allocation paths**: Where possible, using `Span<T>` and `stackalloc`.
 * **TrySerialize API**: Serialize directly into pre-allocated buffers to avoid intermediate allocations.
 
 Overall, the library performs a lot of work during the first serialization/deserialization with a specific `CborSerializerOptions` instance to optimize all subsequent calls with the same options. Therefore, it is not very suitable for scenarios where options can't be reused for multiple calls. 
+
+Library is currently not used source generators, apart compiled [System.Linq.Expressions](https://learn.microsoft.com/en-us/dotnet/api/system.linq.expressions) delegates.
 
 Example with reusable options:
 
