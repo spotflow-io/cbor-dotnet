@@ -59,7 +59,7 @@ public class CborSerializerException : Exception
 
     internal (int, int)? PositionInfo { get; }
 
-    internal static bool IsRecognizedException(Exception ex) => ex is CborSerializerException or NotSupportedException or FormatException or CborContentException;
+    internal static bool IsRecognizedException(Exception ex) => ex is CborSerializerException or NotSupportedException or FormatException or CborContentException or OverflowException;
 
     internal static Exception WrapWithParentScope(Exception ex, string parentScope)
     {
@@ -71,6 +71,7 @@ public class CborSerializerException : Exception
             CborSerializerException cborSerializerException => new CborSerializerException(cborSerializerException, parentScope, null),
             NotSupportedException nse => WrapWithAdditionalContext(nse, parentScope, null, (m, ie) => new NotSupportedException(m, ie)),
             FormatException fe => WrapWithAdditionalContext(fe, parentScope, null, (m, ie) => new FormatException(m, ie)),
+            OverflowException oe => WrapWithAdditionalContext(oe, parentScope, null, (m, ie) => new OverflowException(m, ie)),
             CborContentException cce => WrapWithAdditionalContext(cce, parentScope, null, (m, ie) => new CborSerializerException(m, ie)),
             _ => new InvalidOperationException("Unrecognized exception type cannot be wrapped with scope information.", ex)
         };
@@ -87,6 +88,7 @@ public class CborSerializerException : Exception
             CborSerializerException cborSerializerException => new CborSerializerException(cborSerializerException, null, (currentByte, currentDepth)),
             NotSupportedException nse => WrapWithAdditionalContext(nse, null, positionInfo, (m, ie) => new NotSupportedException(m, ie)),
             FormatException fe => WrapWithAdditionalContext(fe, null, positionInfo, (m, ie) => new FormatException(m, ie)),
+            OverflowException oe => WrapWithAdditionalContext(oe, null, positionInfo, (m, ie) => new OverflowException(m, ie)),
             CborContentException cce => WrapWithAdditionalContext(cce, null, positionInfo, (m, ie) => new CborSerializerException(m, ie)),
             _ => new InvalidOperationException("Unrecognized exception type cannot be wrapped with position information.", ex)
         };

@@ -187,8 +187,11 @@ public class UInt128Tests
         var act = () => CborSerializer.Deserialize<TestModel>(cbor);
 
         act.Should()
-            .Throw<CborSerializerException>()
-            .WithMessage("Unexpected CBOR data type.*");
+            .Throw<OverflowException>()
+            .WithMessage("Arithmetic operation resulted in an overflow.\n\n" +
+                "Path:\n" +
+                "#0: UInt128Property (*_TestModel)\n\n" +
+                "At: byte 19, depth 1.");
     }
 }
 
