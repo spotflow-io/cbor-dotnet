@@ -337,6 +337,7 @@ internal static class CborTypeInfo
             new CborIntegerConverter.UInt64(),
             new CborIntegerConverter.Int128(),
             new CborIntegerConverter.UInt128(),
+            new CborBigIntegerConverter(),
             new CborBooleanConverter(),
             new CborFloatingPointConverter.Half(),
             new CborFloatingPointConverter.Single(),
