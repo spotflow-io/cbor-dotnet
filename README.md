@@ -8,6 +8,7 @@ A high-performance .NET library for serializing and deserializing CBOR (Concise 
 - Built on top of the official `System.Formats.Cbor` library.
 - Support for custom converters.
 - Strong nullability support with nullable reference types.
+- Support for `required` property modifier.
 - Flexible configuration options.
 - High-performance serialization and deserialization.
 
@@ -131,6 +132,77 @@ byte[] cbor = CborSerializer.Serialize(person, options);
 - Enum serialization as numbers or strings
 - Custom property naming with attributes (`CborPropertyAttribute`) and/or `PropertyNamingPolicy` option.
 - Optional case-insensitive property name matching.
+
+## Nullability and Required Properties
+
+### The `required` Modifier
+
+Properties marked with the `required` modifier must be present in the CBOR data during deserialization. If a required property is missing, a `CborSerializerException` is thrown:
+
+```csharp
+public class Person
+{
+    public required string Name { get; init; }  // Must be present
+    public required int Age { get; init; }      // Must be present
+    public string? Nickname { get; init; }      // Optional
+}
+```
+**Important**: The `required` modifier is checked regardless of nullability. Both `required string Name` and `required string? Name` must be present in the CBOR data.
+
+### Reference Types
+
+The `RespectNullableAnnotations` option controls how nullable reference type annotations (`string?` vs `string`) are handled:
+
+**When `RespectNullableAnnotations = false` (default)**:
+- Null values are allowed for all reference types, regardless of nullability annotations
+- `string` and `string?` are treated identically.
+- This matches the default behavior of most serializers.
+
+```csharp
+public class Person
+{
+    public string Name { get; init; }   // Can be null
+    public string? Nickname { get; init; } // Can be null
+}
+```
+
+**When `RespectNullableAnnotations = true`**:
+- Non-nullable reference types (`string`) cannot be null.
+- Nullable reference types (`string?`) can be null.
+- Attempting to deserialize null into a non-nullable reference type throws `CborSerializerException`.
+- If a property is not marked as `required`, it is not deserialized if missing, effectively having a null value.
+
+```csharp
+public class Person
+{
+    public string Name1 { get; init; }   // Cannot be deserialized from null, but is not required so the property can effectively have a null value.
+    public required string Name2 { get; init; } // Must be present and cannot be deserialized null.
+    public string? Name3 { get; init; } // Can be null or missing.
+    public required string? Name4 { get; init; } // Must be present, but can be deserialized from null.
+}
+```
+
+### Value Types
+
+- Null cannot be assigned to non-nullable value types such as `int` or `DateTime`.
+- Null can be assigned to nullable value types (e.g., `int?`, `DateTime?`).
+- If a non-nullable value type property is missing in the CBOR data, it will receive the default value of that type (e.g., `0` for `int`, `DateTime.MinValue` for `DateTime`). To enforce presence, use the `required` modifier.
+
+```csharp
+public class Record
+{
+    public int Count1 { get; init; }      // Cannot be null but can be missing (default value 0 is assigned).
+    public required int Count2 { get; init; } // Must be present and cannot be null.
+    public int? Count3 { get; init; } // Can be null or missing.
+    public required int? Count4 { get; init; } // Must be present, but can be null.
+}
+```
+
+### Best Practices
+
+* **Use `required` for mandatory data**: Mark properties as `required` when they must always be present in your data model.
+* **Consider `RespectNullableAnnotations = true` for new projects**: This provides stronger type safety and better aligns with C# nullable reference types.
+* **Handle missing vs. null**: Remember that "missing" and "null" are different concepts in CBOR. Use `required` to enforce presence, and nullability to control whether null values are allowed.
 
 ## CBOR serialization & deserialization
 
