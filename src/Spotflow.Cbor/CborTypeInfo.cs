@@ -347,6 +347,7 @@ internal static class CborTypeInfo
             new CborDateTimeOffsetConverter(),
             new CborTimeOnlyConverter(),
             new CborDateOnlyConverter(),
+            new CborTimeSpanConverter(),
             new CborGuidConverter(),
             new CborUriConverter(),
             new CborByteStringConverter.Array(),
