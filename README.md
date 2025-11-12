@@ -2,10 +2,11 @@
 
 A high-performance .NET library for serializing and deserializing CBOR (Concise Binary Object Representation) data. Built on top of `System.Formats.Cbor`, this library provides a simple, type-safe API similar to `System.Text.Json` for working with CBOR data.
 
+[![NuGet](https://img.shields.io/nuget/v/Spotflow.Cbor.svg)](https://www.nuget.org/packages/Spotflow.Cbor) ![CI status](https://github.com/spotflow-io/cbor-dotnet/actions/workflows/ci.yml/badge.svg?branch=main) [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 <p align="left">
   <img src="logo.png" alt="Spotflow.Cbor Logo" width="300"/>
 </p>
-
 
 ## Features
 
@@ -18,13 +19,8 @@ A high-performance .NET library for serializing and deserializing CBOR (Concise 
 - Flexible configuration options.
 - High-performance serialization and deserialization.
 
-
-![CI status](https://github.com/spotflow-io/cbor-dotnet/actions/workflows/ci.yml/badge.svg?branch=main)
-
-
 ## Installation
 
- [![NuGet](https://img.shields.io/nuget/v/Spotflow.Cbor.svg)](https://www.nuget.org/packages/Spotflow.Cbor)
 
 ```bash
 dotnet add package Spotflow.Cbor
