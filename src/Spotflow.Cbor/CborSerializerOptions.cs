@@ -29,11 +29,9 @@ public class CborSerializerOptions
         _writersPool = new(static o => new(o.ConformanceMode, convertIndefiniteLengthEncodings: o.ConvertIndefiniteLengthEncodings), this);
     }
 
-    private CborIgnoreCondition _defaultIgnoreCondition = CborIgnoreCondition.Never;
-
     public CborIgnoreCondition DefaultIgnoreCondition
     {
-        get => _defaultIgnoreCondition;
+        get;
         set
         {
             AssertNotReadOnly();
@@ -43,169 +41,144 @@ public class CborSerializerOptions
                 throw new ArgumentException($"'{CborIgnoreCondition.Always}' is not valid for '{nameof(DefaultIgnoreCondition)}'. Use the '{nameof(CborIgnoreAttribute)}' attribute to ignore specific properties.", nameof(value));
             }
 
-            _defaultIgnoreCondition = value;
+            field = value;
         }
-    }
-
-    private bool _respectNullableAnnotations = false;
+    } = CborIgnoreCondition.Never;
 
     public bool RespectNullableAnnotations
     {
-        get => _respectNullableAnnotations;
+        get;
         set
         {
             AssertNotReadOnly();
-            _respectNullableAnnotations = value;
+            field = value;
         }
-    }
-
-    private CborConformanceMode _conformanceMode = CborConformanceMode.Strict;
+    } = false;
 
     public CborConformanceMode ConformanceMode
     {
-        get => _conformanceMode; set
+        get; set
         {
 
             AssertNotReadOnly();
-            _conformanceMode = value;
+            field = value;
         }
-    }
-
-    private bool _convertIndefiniteLengthEncodings = false;
+    } = CborConformanceMode.Strict;
 
     public bool ConvertIndefiniteLengthEncodings
     {
-        get => _convertIndefiniteLengthEncodings; set
+        get; set
         {
             AssertNotReadOnly();
-            _convertIndefiniteLengthEncodings = value;
+            field = value;
         }
-    }
+    } = false;
 
     private readonly List<CborConverter> _converters = [];
 
     public IList<CborConverter> Converters => _converters;
 
-    private bool _preferNumericPropertyNames = true;
-
     public bool PreferNumericPropertyNames
     {
-        get => _preferNumericPropertyNames;
+        get;
         set
         {
             AssertNotReadOnly();
-            _preferNumericPropertyNames = value;
+            field = value;
         }
-    }
-
-    private CborNamingPolicy? _propertyNamingPolicy;
+    } = true;
 
     public CborNamingPolicy? PropertyNamingPolicy
     {
-        get => _propertyNamingPolicy; set
+        get; set
         {
             AssertNotReadOnly();
-            _propertyNamingPolicy = value;
+            field = value;
         }
     }
-
-    private CborUnmappedMemberHandling _unmappedMemberHandling = CborUnmappedMemberHandling.Skip;
 
     public CborUnmappedMemberHandling UnmappedMemberHandling
     {
-        get => _unmappedMemberHandling;
+        get;
         set
         {
             AssertNotReadOnly();
-            _unmappedMemberHandling = value;
+            field = value;
         }
-    }
-
-    private CborBooleanHandling _booleanHandling = CborBooleanHandling.Strict;
+    } = CborUnmappedMemberHandling.Skip;
 
     public CborBooleanHandling BooleanHandling
     {
-        get => _booleanHandling;
+        get;
         set
         {
             AssertNotReadOnly();
-            _booleanHandling = value;
+            field = value;
         }
-    }
-
-    private CborNumberHandling _numberHandling = CborNumberHandling.Strict;
+    } = CborBooleanHandling.Strict;
 
     public CborNumberHandling NumberHandling
     {
-        get => _numberHandling;
+        get;
         set
         {
             AssertNotReadOnly();
-            _numberHandling = value;
+            field = value;
         }
-    }
-
-    private bool _propertyNameCaseInsensitive = false;
+    } = CborNumberHandling.Strict;
 
     public bool PropertyNameCaseInsensitive
     {
-        get => _propertyNameCaseInsensitive;
+        get;
         set
         {
             AssertNotReadOnly();
-            _propertyNameCaseInsensitive = value;
+            field = value;
         }
-    }
-
-    private int _maxDepth = 0;
+    } = false;
 
     public int MaxDepth
     {
-        get => _maxDepth;
+        get;
         set
         {
             AssertNotReadOnly();
 
             ArgumentOutOfRangeException.ThrowIfLessThan(value, 0);
 
-            _maxDepth = value;
+            field = value;
         }
-    }
+    } = 0;
 
-    private bool _handleUndefinedValuesAsNulls = false;
     public bool HandleUndefinedValuesAsNulls
     {
-        get => _handleUndefinedValuesAsNulls;
+        get;
         set
         {
             AssertNotReadOnly();
-            _handleUndefinedValuesAsNulls = value;
+            field = value;
         }
-    }
-
-    private bool _writeSelfDescribeTag = false;
+    } = false;
 
     public bool WriteSelfDescribeTag
     {
-        get => _writeSelfDescribeTag;
+        get;
         set
         {
             AssertNotReadOnly();
-            _writeSelfDescribeTag = value;
+            field = value;
         }
-    }
-
-    private bool _writeDateTimeStringTag = false;
+    } = false;
 
     public bool WriteDateTimeStringTag
     {
-        get => _writeDateTimeStringTag;
+        get;
         set
         {
             AssertNotReadOnly();
-            _writeDateTimeStringTag = value;
+            field = value;
         }
-    }
+    } = false;
 
     public void MakeReadOnly()
     {
@@ -257,7 +230,7 @@ public class CborSerializerOptions
 
     internal void AssertMaxDepth(int currentDepth)
     {
-        var maxDepthResolved = _maxDepth == 0 ? DefaultMaxDepth : _maxDepth;
+        var maxDepthResolved = MaxDepth == 0 ? DefaultMaxDepth : MaxDepth;
 
         if (currentDepth > maxDepthResolved)
         {
