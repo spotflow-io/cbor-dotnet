@@ -4,10 +4,13 @@ namespace Spotflow.Cbor.Converters;
 
 internal class CborDictionaryConverter() : CborDictionaryConverterFactoryBase(typeof(GenericConverter<,,>))
 {
-    private static readonly FrozenSet<Type> _supportedTypes = [
+    private static readonly FrozenSet<Type> _supportedTypes = new HashSet<Type>
+    {
         typeof(IDictionary<,>),
         typeof(IReadOnlyDictionary<,>),
-        typeof(Dictionary<,>)];
+        typeof(Dictionary<,>)
+    }
+    .ToFrozenSet();
 
     public override bool CanConvert(Type typeToConvert)
     {

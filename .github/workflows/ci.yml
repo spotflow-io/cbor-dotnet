@@ -65,6 +65,8 @@ jobs:
         with:
           dotnet-version: |
             6.x.x
+            8.x.x
+            9.x.x
             10.x.x
       - name: Restore
         run: dotnet restore

@@ -69,7 +69,11 @@ internal static class CborFloatingPointConverter
         CborReader reader,
         ReadOnlySpan<CborReaderState> expectedNumericStates,
         Func<CborReader, T> readNumeric,
+#if NET9_0_OR_GREATER
         Func<ReadOnlySpan<char>, NumberFormatInfo, T> parse,
+#else
+        Func<string, NumberFormatInfo, T> parse,
+#endif
         CborSerializerOptions options) where T : ISpanFormattable
     {
         var state = reader.PeekState();

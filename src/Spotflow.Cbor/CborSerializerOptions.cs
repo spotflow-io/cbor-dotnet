@@ -8,7 +8,11 @@ public class CborSerializerOptions
 {
     public static CborSerializerOptions Default { get; }
 
+#if NET9_0_OR_GREATER
     private readonly Lock _lock = new();
+#else
+    private readonly object _lock = new();
+#endif
 
     private bool _isReadOnly = false;
 
@@ -187,9 +191,10 @@ public class CborSerializerOptions
             return;
         }
 
-        using var lockScope = _lock.EnterScope();
-
-        _isReadOnly = true;
+        lock (_lock)
+        {
+            _isReadOnly = true;
+        }
     }
 
     internal CborReader LeaseReader(ReadOnlyMemory<byte> cbor)
@@ -220,11 +225,12 @@ public class CborSerializerOptions
             throw new InvalidOperationException("Cannot modify options after it has been used for serialization or deserialization.");
         }
 
-        using var lockScope = _lock.EnterScope();
-
-        if (_isReadOnly)
+        lock (_lock)
         {
-            throw new InvalidOperationException("Cannot modify options after it has been used for serialization or deserialization.");
+            if (_isReadOnly)
+            {
+                throw new InvalidOperationException("Cannot modify options after it has been used for serialization or deserialization.");
+            }
         }
     }
 

@@ -4,13 +4,16 @@ namespace Spotflow.Cbor.Converters;
 
 internal class CborListConverter() : CborCollectionConverterFactoryBase(typeof(GenericConverter<,>))
 {
-    private static readonly FrozenSet<Type> _supportedTypes = [
+    private static readonly FrozenSet<Type> _supportedTypes = new HashSet<Type>
+    {
         typeof(IEnumerable<>),
         typeof(ICollection<>),
         typeof(IReadOnlyCollection<>),
         typeof(IList<>),
         typeof(IReadOnlyList<>),
-        typeof(List<>)];
+        typeof(List<>)
+    }
+    .ToFrozenSet();
 
     public override bool CanConvert(Type typeToConvert)
     {

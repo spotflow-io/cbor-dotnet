@@ -419,6 +419,8 @@ public class CustomConvertersNullabilityTestsForJson
 
     }
 
+#if NET9_0_OR_GREATER
+
     [TestMethod]
     public void Converter_For_Reference_Type_For_Property_With_Null_Value_Without_Null_Handling_Without_Nullable_Annotations_Should_Not_Be_Applied()
     {
@@ -460,6 +462,8 @@ public class CustomConvertersNullabilityTestsForJson
             .WithMessage("The property or field 'Property' on type '*TestModelWithReferenceType' doesn't allow setting null values. Consider updating its nullability annotation.*");
 
     }
+
+#endif
 
     [TestMethod]
     [DataRow(true)]

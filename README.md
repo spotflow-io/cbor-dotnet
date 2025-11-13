@@ -18,6 +18,7 @@ A high-performance .NET library for serializing and deserializing CBOR (Concise 
 - Support for `required` property modifier.
 - Flexible configuration options.
 - High-performance serialization and deserialization.
+- Built for .NET 8, .NET 9, and .NET 10.
 
 ## Installation
 

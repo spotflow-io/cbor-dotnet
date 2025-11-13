@@ -409,12 +409,6 @@ public class EnumTests
     [TestMethod]
     public void Deserializing_Enum_With_Custom_Names_Should_Throw_When_String_Converter_Provided_And_Name_Not_Found()
     {
-        var json = """
-        {
-            "EnumWithCustomNamesProperty": "RegularName1"
-        }
-        """;
-
         var writer = new CborWriter();
         writer.WriteStartMap(null);
         writer.WriteTextString("EnumWithCustomNamesProperty");
@@ -423,13 +417,7 @@ public class EnumTests
 
         var cbor = writer.Encode();
 
-        Action actJson = () => JsonSerializer.Deserialize<TestModel>(json, options: new() { Converters = { new JsonStringEnumConverter() } });
-
         Action actCbor = () => CborSerializer.Deserialize<TestModel>(cbor, options: new() { Converters = { new CborStringEnumConverter() } });
-
-        actJson.Should()
-            .Throw<JsonException>()
-            .WithMessage("The JSON value could not be converted to *");
 
         actCbor.Should()
             .Throw<CborSerializerException>()
@@ -437,6 +425,21 @@ public class EnumTests
                 "Path:\n" +
                 "#0: EnumWithCustomNamesProperty (*_TestModel)\n\n" +
                 "At: byte 43, depth 1.");
+
+#if NET9_0_OR_GREATER
+
+        var json = """
+        {
+            "EnumWithCustomNamesProperty": "RegularName1"
+        }
+        """;
+
+        Action actJson = () => JsonSerializer.Deserialize<TestModel>(json, options: new() { Converters = { new JsonStringEnumConverter() } });
+
+        actJson.Should()
+            .Throw<JsonException>()
+            .WithMessage("The JSON value could not be converted to *");
+#endif
 
     }
 }
@@ -479,7 +482,9 @@ file enum ULongEnum : ulong { Value }
 file enum EnumWithCustomNames
 {
     [CborStringEnumMemberName("CustomName1")]
+#if NET9_0_OR_GREATER
     [JsonStringEnumMemberName("CustomName1")]
+#endif
     RegularName1,
 
     RegularName2
