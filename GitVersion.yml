@@ -1,6 +1,5 @@
 branches:
   main:
-    mode: ManualDeployment
     label: beta
   pull-request:
-    label: alpha
+    label: alpha{Number}
