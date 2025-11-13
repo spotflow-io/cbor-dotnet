@@ -37,8 +37,10 @@ jobs:
         id: resolve-version
         shell: pwsh
         working-directory: ./
-        run: |
-          $rawVersion = dotnet-gitversion | ConvertFrom-Json
+        run: |   
+          $dotnetVersionOutput = dotnet-gitversion
+          Write-Output $dotnetVersionOutput
+          $rawVersion = $dotnetVersionOutput | ConvertFrom-Json
           Write-Output $rawVersion
           $semVer = $rawVersion.SemVer
           Write-Output "Resolved version $semVer"
