@@ -31,14 +31,16 @@ jobs:
       - name: Install dotnet-gitversion
         run: |
           echo ":/github/home/.dotnet/tools" >> $GITHUB_PATH
-          dotnet tool install -g GitVersion.Tool --version "6.0.5" --ignore-failed-sources
+          dotnet tool install -g GitVersion.Tool --version "6.5.0" --ignore-failed-sources
         shell: bash
       - name: Resolve Version
         id: resolve-version
         shell: pwsh
         working-directory: ./
-        run: |
-          $rawVersion = dotnet-gitversion | ConvertFrom-Json
+        run: |   
+          $dotnetVersionOutput = dotnet-gitversion
+          Write-Output $dotnetVersionOutput
+          $rawVersion = $dotnetVersionOutput | ConvertFrom-Json
           Write-Output $rawVersion
           $semVer = $rawVersion.SemVer
           Write-Output "Resolved version $semVer"

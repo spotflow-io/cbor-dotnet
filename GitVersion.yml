@@ -1,7 +1,5 @@
-build-metadata-padding: 4
-mode: ContinuousDeployment
 branches:
   main:
-    tag: beta
+    label: beta
   pull-request:
-    tag: alpha
+    label: alpha{Number}
