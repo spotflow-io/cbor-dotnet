@@ -31,7 +31,7 @@ jobs:
       - name: Install dotnet-gitversion
         run: |
           echo ":/github/home/.dotnet/tools" >> $GITHUB_PATH
-          dotnet tool install -g GitVersion.Tool --version "6.0.5" --ignore-failed-sources
+          dotnet tool install -g GitVersion.Tool --version "6.5.0" --ignore-failed-sources
         shell: bash
       - name: Resolve Version
         id: resolve-version
