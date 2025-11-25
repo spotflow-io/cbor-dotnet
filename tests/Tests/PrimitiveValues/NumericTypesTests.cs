@@ -198,6 +198,51 @@ public class NumericTypesTests
         value.DoublePrecision.Should().Be(5.141592653589793);
     }
 
+    [TestMethod]
+    public void Deserializing_Floating_Points_From_Positive_Integers_Should_Succeed()
+    {
+        var writer = new CborWriter();
+
+        writer.WriteStartMap(null);
+        writer.WriteTextString("HalfPrecision");
+        writer.WriteInt32(42);
+        writer.WriteTextString("SinglePrecision");
+        writer.WriteInt32(84);
+        writer.WriteTextString("DoublePrecision");
+        writer.WriteInt32(168);
+        writer.WriteEndMap();
+
+        var cbor = writer.Encode();
+
+        var value = CborSerializer.Deserialize<TestModel>(cbor);
+
+        value.Should().NotBeNull();
+
+        value.HalfPrecision.Should().Be((Half) 42);
+        value.SinglePrecision.Should().Be(84);
+        value.DoublePrecision.Should().Be(168);
+    }
+
+    [TestMethod]
+    public void Deserializing_Floating_Points_From_Negative_Integers_Should_Succeed()
+    {
+        var writer = new CborWriter();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("HalfPrecision");
+        writer.WriteInt32(-42);
+        writer.WriteTextString("SinglePrecision");
+        writer.WriteInt32(-84);
+        writer.WriteTextString("DoublePrecision");
+        writer.WriteInt32(-168);
+        writer.WriteEndMap();
+        var cbor = writer.Encode();
+        var value = CborSerializer.Deserialize<TestModel>(cbor);
+        value.Should().NotBeNull();
+        value.HalfPrecision.Should().Be((Half) (-42));
+        value.SinglePrecision.Should().Be(-84);
+        value.DoublePrecision.Should().Be(-168);
+    }
+
 
     [TestMethod]
     public void Serializing_Floating_Points_Should_Succeed()
