@@ -15,6 +15,8 @@ internal static class CborFloatingPointConverter
                 reader,
                 [CborReaderState.HalfPrecisionFloat],
                 static reader => reader.ReadHalf(),
+                static value => (System.Half) value,
+                static value => (System.Half) value,
                 System.Half.Parse,
                 options);
         }
@@ -35,6 +37,8 @@ internal static class CborFloatingPointConverter
                 reader,
                 [CborReaderState.SinglePrecisionFloat, CborReaderState.HalfPrecisionFloat],
                 static reader => reader.ReadSingle(),
+                static value => value,
+                static value => value,
                 float.Parse,
                 options);
         }
@@ -55,6 +59,8 @@ internal static class CborFloatingPointConverter
                 reader,
                 [CborReaderState.DoublePrecisionFloat, CborReaderState.SinglePrecisionFloat, CborReaderState.HalfPrecisionFloat],
                 static reader => reader.ReadDouble(),
+                static value => value,
+                static value => value,
                 double.Parse,
                 options);
         }
@@ -69,6 +75,8 @@ internal static class CborFloatingPointConverter
         CborReader reader,
         ReadOnlySpan<CborReaderState> expectedNumericStates,
         Func<CborReader, T> readNumeric,
+        Func<long, T> fromInteger,
+        Func<ulong, T> fromUnsignedInteger,
 #if NET9_0_OR_GREATER
         Func<ReadOnlySpan<char>, NumberFormatInfo, T> parse,
 #else
@@ -81,6 +89,18 @@ internal static class CborFloatingPointConverter
         if (contains(expectedNumericStates, state))
         {
             return readNumeric(reader);
+        }
+
+        if (state is CborReaderState.UnsignedInteger)
+        {
+            var value = reader.ReadUInt64();
+            return fromUnsignedInteger(value);
+        }
+
+        if (state is CborReaderState.NegativeInteger)
+        {
+            var value = reader.ReadInt64();
+            return fromInteger(value);
         }
 
         var allowReadingFromString = options.NumberHandling.HasFlag(CborNumberHandling.AllowReadingFromString);
