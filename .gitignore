@@ -35,6 +35,7 @@ bld/
 [Tt]est[Rr]esult*/
 [Bb]uild[Ll]og.*
 coverage.json
+coverage.*.json
 # NUNIT
 *.VisualState.xml
 TestResult.xml
