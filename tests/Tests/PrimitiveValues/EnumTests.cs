@@ -442,6 +442,109 @@ public class EnumTests
 #endif
 
     }
+
+    [TestMethod]
+    public void Serializing_With_String_Converter_And_SerializeAsInteger_True_Should_Yield_Integer_Value()
+    {
+        var model = new TestModel
+        {
+            NullableProperty1 = DayOfWeek.Tuesday,
+            NullableProperty2 = DateTimeKind.Utc
+        };
+
+        var options = new CborSerializerOptions()
+        {
+            PreferNumericPropertyNames = false,
+            DefaultIgnoreCondition = CborIgnoreCondition.WhenWritingNull,
+            Converters = { new CborStringEnumConverter(caseSensitive: false, serializeAsInteger: true) }
+        };
+
+        var cbor = CborSerializer.Serialize(model, options);
+
+        var reader = new CborReader(cbor);
+
+        reader.ReadStartMap();
+        reader.ReadTextString().Should().Be("NullableProperty1");
+        reader.ReadUInt32().Should().Be(2);
+        reader.ReadTextString().Should().Be("NullableProperty2");
+        reader.ReadUInt32().Should().Be(1);
+        reader.ReadEndMap();
+    }
+
+    [TestMethod]
+    public void Serializing_With_Generic_String_Converter_And_SerializeAsInteger_True_Should_Yield_Integer_Value()
+    {
+        var model = new TestModel
+        {
+            NullableProperty1 = DayOfWeek.Tuesday,
+            NullableProperty2 = DateTimeKind.Utc
+        };
+
+        var options = new CborSerializerOptions()
+        {
+            PreferNumericPropertyNames = false,
+            DefaultIgnoreCondition = CborIgnoreCondition.WhenWritingNull,
+            Converters = { new CborStringEnumConverter<DayOfWeek>(caseSensitive: false, serializeAsInteger: true) }
+        };
+
+        var cbor = CborSerializer.Serialize(model, options);
+
+        var reader = new CborReader(cbor);
+
+        reader.ReadStartMap();
+        reader.ReadTextString().Should().Be("NullableProperty1");
+        reader.ReadUInt32().Should().Be(2);
+        reader.ReadTextString().Should().Be("NullableProperty2");
+        reader.ReadUInt32().Should().Be(1);
+        reader.ReadEndMap();
+    }
+
+    [TestMethod]
+    public void Deserializing_From_String_With_String_Converter_And_SerializeAsInteger_True_Should_Still_Work()
+    {
+        var writer = new CborWriter();
+
+        writer.WriteStartMap(null);
+        writer.WriteTextString("NullableProperty1");
+        writer.WriteTextString("Tuesday");
+        writer.WriteTextString("NullableProperty2");
+        writer.WriteTextString("Utc");
+        writer.WriteEndMap();
+
+        var cbor = writer.Encode();
+
+        var value = CborSerializer.Deserialize<TestModel>(cbor, options: new()
+        {
+            Converters = { new CborStringEnumConverter(caseSensitive: false, serializeAsInteger: true) }
+        });
+
+        value.Should().NotBeNull();
+        value.NullableProperty1.Should().Be(DayOfWeek.Tuesday);
+        value.NullableProperty2.Should().Be(DateTimeKind.Utc);
+    }
+
+    [TestMethod]
+    public void Deserializing_From_String_With_Generic_String_Converter_And_SerializeAsInteger_True_Should_Still_Work()
+    {
+        var writer = new CborWriter();
+
+        writer.WriteStartMap(null);
+        writer.WriteTextString("NullableProperty1");
+        writer.WriteTextString("Tuesday");
+        writer.WriteEndMap();
+
+        var cbor = writer.Encode();
+
+        var value = CborSerializer.Deserialize<TestModel>(cbor, options: new()
+        {
+            Converters = { new CborStringEnumConverter<DayOfWeek>(caseSensitive: false, serializeAsInteger: true) }
+        });
+
+        value.Should().NotBeNull();
+        value.NullableProperty1.Should().Be(DayOfWeek.Tuesday);
+    }
+
+
 }
 
 file class TestModel
