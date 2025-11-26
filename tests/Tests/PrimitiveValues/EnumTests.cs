@@ -544,7 +544,39 @@ public class EnumTests
         value.NullableProperty1.Should().Be(DayOfWeek.Tuesday);
     }
 
+    [TestMethod]
+    public void Property_With_CborStringEnumConverter_Attribute_Should_Be_Deserialized()
+    {
+        var writer = new CborWriter();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("EnumPropertyWithConverterAttribute");
+        writer.WriteTextString("Tuesday");
+        writer.WriteEndMap();
 
+        var cbor = writer.Encode();
+
+        var value = CborSerializer.Deserialize<TestModel>(cbor);
+
+        value.Should().NotBeNull();
+        value.EnumPropertyWithConverterAttribute.Should().Be(DayOfWeek.Tuesday);
+    }
+
+    [TestMethod]
+    public void Property_With_Generic_CborStringEnumConverter_Attribute_Should_Be_Deserialized()
+    {
+        var writer = new CborWriter();
+        writer.WriteStartMap(null);
+        writer.WriteTextString("EnumPropertyWithGenericConverterAttribute");
+        writer.WriteTextString("Wednesday");
+        writer.WriteEndMap();
+
+        var cbor = writer.Encode();
+
+        var value = CborSerializer.Deserialize<TestModel>(cbor);
+
+        value.Should().NotBeNull();
+        value.EnumPropertyWithGenericConverterAttribute.Should().Be(DayOfWeek.Wednesday);
+    }
 }
 
 file class TestModel
@@ -569,6 +601,11 @@ file class TestModel
     public ULongEnum? ULongEnumProperty { get; init; }
     public EnumWithCustomNames? EnumWithCustomNamesProperty { get; init; }
 
+    [CborConverter<CborStringEnumConverter>]
+    public DayOfWeek? EnumPropertyWithConverterAttribute { get; init; }
+
+    [CborConverter<CborStringEnumConverter<DayOfWeek>>]
+    public DayOfWeek? EnumPropertyWithGenericConverterAttribute { get; init; }
 }
 
 

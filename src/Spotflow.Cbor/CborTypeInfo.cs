@@ -269,7 +269,11 @@ internal static class CborTypeInfo
 
         var converterType = attribute.GetType().GenericTypeArguments.Single();
 
-        if (Activator.CreateInstance(converterType) is not CborConverter converter)
+        var (selectedConstructor, constructorArgs) = SelectConstructor(converterType);
+
+        var converter = (CborConverter?) selectedConstructor.Invoke(constructorArgs);
+
+        if (converter is null)
         {
             throw new NotSupportedException($"Failed to create instance of converter type '{converterType.FullName}'.");
         }
@@ -285,6 +289,32 @@ internal static class CborTypeInfo
         {
             return a.GetType().IsGenericType && a.GetType().GetGenericTypeDefinition() == typeof(CborConverterAttribute<>);
         }
+    }
+
+    private static (ConstructorInfo, object?[]) SelectConstructor(Type converterType)
+    {
+        var constructors = converterType.GetConstructors(BindingFlags.Public | BindingFlags.Instance);
+
+        // First try to find a parameterless constructor
+        var selectedConstructor = constructors.FirstOrDefault(c => c.GetParameters().Length == 0);
+
+        if (selectedConstructor is not null)
+        {
+            return (selectedConstructor, []);
+        }
+
+        // Try to find a constructor where all parameters have default values
+        foreach (var ctor in constructors.OrderBy(c => c.GetParameters().Length))
+        {
+            var parameters = ctor.GetParameters();
+            if (parameters.All(p => p.HasDefaultValue))
+            {
+                var constructorArgs = parameters.Select(p => p.DefaultValue).ToArray();
+                return (ctor, constructorArgs);
+            }
+        }
+
+        throw new NotSupportedException($"Failed to create instance of converter type '{converterType.FullName}'. No suitable constructor found (parameterless or all parameters with default values).");
     }
 
     private static void AssertConverterType(CborConverter converter, Type valueType)
