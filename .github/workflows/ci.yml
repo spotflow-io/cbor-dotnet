@@ -84,7 +84,7 @@ jobs:
           Get-ChildItem ./nugets -Filter '*.nupkg' | ForEach-Object { dotnet-validate package local $_ }
         shell: pwsh
       - name: Upload Nugets as Artifacts
-        uses: actions/upload-artifact@v8
+        uses: actions/upload-artifact@v7
         if: ${{ needs.init.outputs.publish-nuget-org == 'true' || needs.init.outputs.publish-github == 'true'}}
         with:
           name: nugets
