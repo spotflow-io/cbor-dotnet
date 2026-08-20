@@ -1,9 +1,9 @@
 <Project>
-    <ItemGroup>
-        <PackageVersion Include="System.Formats.Cbor" Version="9.0.10" />
-        <PackageVersion Include="coverlet.collector" Version="6.0.4" />
-        <PackageVersion Include="coverlet.msbuild" Version="6.0.4" />
-        <PackageVersion Include="FluentAssertions" Version="7.2.0" />
-        <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
-    </ItemGroup>
+  <ItemGroup>
+    <PackageVersion Include="System.Formats.Cbor" Version="10.0.11" />
+    <PackageVersion Include="coverlet.collector" Version="10.0.1" />
+    <PackageVersion Include="coverlet.msbuild" Version="10.0.1" />
+    <PackageVersion Include="FluentAssertions" Version="7.2.2" />
+    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
+  </ItemGroup>
 </Project>
