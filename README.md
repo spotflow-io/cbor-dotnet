@@ -27,8 +27,6 @@ A high-performance .NET library for serializing and deserializing CBOR (Concise 
 dotnet add package Spotflow.Cbor
 ```
 
-The library requires `System.Formats.Cbor` 10.0.15 or newer, which fixes the CBOR map-key denial-of-service vulnerability [GHSA-vmv3-wvjp-wqpj](https://github.com/advisories/GHSA-vmv3-wvjp-wqpj).
-
 ## Quick Start
 
 ### Basic Serialization
